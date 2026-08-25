@@ -13,9 +13,11 @@ import com.dev.E_commerce.Mini.mapper.PaymentMapper;
 import com.dev.E_commerce.Mini.repository.OrderRepository;
 import com.dev.E_commerce.Mini.repository.PaymentRepository;
 import com.dev.E_commerce.Mini.repository.UserRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -33,6 +36,7 @@ public class PaymentService {
     UserRepository userRepository;
     PaymentMapper paymentMapper;
     PaymentLookupService paymentLookupService;
+    MeterRegistry meterRegistry;
 
     private User currentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -77,7 +81,13 @@ public class PaymentService {
                 .amount(order.getTotalPrice())
                 .paidAt(isCod ? LocalDateTime.now() : null)
                 .build();
-        return paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+
+        meterRegistry.counter("payments.processed", "method", method.name(), "status", saved.getStatus().name()).increment();
+        log.info("Payment created paymentId={} orderId={} method={} status={} amount={}",
+                saved.getId(), order.getId(), method, saved.getStatus(), saved.getAmount());
+
+        return saved;
     }
 
     @Transactional(readOnly = true)

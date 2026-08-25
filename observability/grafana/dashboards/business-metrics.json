@@ -1,0 +1,94 @@
+{
+  "title": "Business Metrics",
+  "uid": "business-metrics",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Orders Created / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "60 * sum(rate(orders_placed_total{application=\"E-commerce-Mini\"}[5m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Revenue / hour",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "3600 * sum(rate(orders_value_sum{application=\"E-commerce-Mini\"}[5m]))",
+          "legendFormat": "revenue"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Average Order Value",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(orders_value_sum{application=\"E-commerce-Mini\"}) / sum(orders_value_count{application=\"E-commerce-Mini\"})"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Out-of-Stock Rejections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(products_stock_rejected_total{application=\"E-commerce-Mini\"}[5m])) by (productId)",
+          "legendFormat": "productId={{productId}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Voucher Rejections by Reason",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(vouchers_rejected_total{application=\"E-commerce-Mini\"}[5m])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Payments Processed by Method / Status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(payments_processed_total{application=\"E-commerce-Mini\"}[5m])) by (method, status)",
+          "legendFormat": "{{method}}/{{status}}"
+        }
+      ]
+    }
+  ]
+}

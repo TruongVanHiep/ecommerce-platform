@@ -41,6 +41,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 
+                // Actuator: health/info/prometheus/metrics — cần public để Docker healthcheck
+                // và Prometheus scrape được (chỉ những endpoint này được expose, xem application.yaml)
+                .requestMatchers("/actuator/**").permitAll()
+
                 // Các route public cho OAuth2 / Login
                 .requestMatchers("/", "/login", "/login.html", "/login/**", "/error", "/oauth2/**").permitAll()
 

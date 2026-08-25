@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   config:
     import: optional:application-secrets.yaml
@@ -47,4 +50,28 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mail:
+      enabled: false
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 

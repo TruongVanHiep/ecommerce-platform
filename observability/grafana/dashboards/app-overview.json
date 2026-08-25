@@ -1,0 +1,149 @@
+{
+  "title": "Application Overview",
+  "uid": "app-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"E-commerce-Mini\"}[1m])) by (uri, method)",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "5xx Error Rate (%)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(http_server_requests_seconds_count{application=\"E-commerce-Mini\", outcome=\"SERVER_ERROR\"}[5m])) / sum(rate(http_server_requests_seconds_count{application=\"E-commerce-Mini\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "Backend Up",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "up{job=\"backend\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "title": "Latency p50 / p95 / p99 (s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{application=\"E-commerce-Mini\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"E-commerce-Mini\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"E-commerce-Mini\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "JVM Heap Used",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "jvm_memory_used_bytes{application=\"E-commerce-Mini\", area=\"heap\"}",
+          "legendFormat": "{{id}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "HikariCP Active Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "hikaricp_connections_active{application=\"E-commerce-Mini\"}",
+          "legendFormat": "active"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "hikaricp_connections_idle{application=\"E-commerce-Mini\"}",
+          "legendFormat": "idle"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "GC Pause Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(jvm_gc_pause_seconds_count{application=\"E-commerce-Mini\"}[5m])",
+          "legendFormat": "{{action}}"
+        }
+      ]
+    }
+  ]
+}

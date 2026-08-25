@@ -12,9 +12,11 @@ import com.dev.E_commerce.Mini.repository.CartRepository;
 import com.dev.E_commerce.Mini.repository.OrderRepository;
 import com.dev.E_commerce.Mini.repository.ProductRepository;
 import com.dev.E_commerce.Mini.repository.UserRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -39,6 +42,7 @@ public class OrderService {
     ApplicationEventPublisher eventPublisher;
     OrderLookupService orderLookupService;
     ProductRepository productRepository;
+    MeterRegistry meterRegistry;
 
     private static final BigDecimal FREE_SHIPPING_THRESHOLD = BigDecimal.valueOf(500_000);
     private static final BigDecimal STANDARD_SHIPPING_FEE = BigDecimal.valueOf(30_000);
@@ -75,6 +79,8 @@ public class OrderService {
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_EXISTED));
 
         if (cart.getCartItems().isEmpty()){
+            meterRegistry.counter("orders.placed", "status", "rejected").increment();
+            log.warn("Order rejected: empty cart username={}", username);
             throw new AppException(ErrorCode.CART_EMPTY);
         }
 
@@ -97,6 +103,9 @@ public class OrderService {
             // an toàn khi nhiều đơn hàng cùng tranh mua 1 sản phẩm sắp hết (xem ProductRepository).
             int updated = productRepository.decreaseStockIfAvailable(item.getProduct().getId(), item.getQuantity());
             if (updated == 0){
+                meterRegistry.counter("products.stock.rejected", "productId", String.valueOf(item.getProduct().getId())).increment();
+                log.warn("Order rejected: out of stock productId={} requestedQty={} username={}",
+                        item.getProduct().getId(), item.getQuantity(), username);
                 throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
             }
 
@@ -114,7 +123,13 @@ public class OrderService {
         Voucher voucher = null;
         BigDecimal discount = BigDecimal.ZERO;
         if (StringUtils.hasText(request.getVoucherCode())) {
-            voucher = voucherService.getValidVoucher(request.getVoucherCode(), total, user);
+            try {
+                voucher = voucherService.getValidVoucher(request.getVoucherCode(), total, user);
+            } catch (AppException e) {
+                meterRegistry.counter("vouchers.rejected", "reason", e.getErrorCode().name()).increment();
+                log.warn("Voucher rejected: code={} reason={} username={}", request.getVoucherCode(), e.getErrorCode(), username);
+                throw e;
+            }
             discount = voucherService.calculateDiscount(voucher, total);
         }
 
@@ -139,6 +154,11 @@ public class OrderService {
         // Chỉ thật sự gửi sau khi transaction này commit thành công (xem OrderEventListener).
         eventPublisher.publishEvent(new OrderCreatedEvent(
                 savedOrder.getId(), user.getEmail(), user.getFullName(), savedOrder.getTotalPrice()));
+
+        meterRegistry.counter("orders.placed", "status", "success").increment();
+        meterRegistry.summary("orders.value").record(savedOrder.getTotalPrice().doubleValue());
+        log.info("Order created orderId={} username={} total={} itemCount={} voucherApplied={}",
+                savedOrder.getId(), username, savedOrder.getTotalPrice(), orderItems.size(), voucher != null);
 
         return orderMapper.toOrderResponse(savedOrder);
     }

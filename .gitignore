@@ -25,6 +25,7 @@ build/
 
 ### Secrets (local-only, never commit) ###
 application-secrets.yaml
+.env
 
 # ===== Frontend (Node / Vite) =====
 node_modules/

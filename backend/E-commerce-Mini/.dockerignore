@@ -1,0 +1,6 @@
+target/
+.idea/
+.mvn/wrapper/maven-wrapper.jar
+*.sql
+*.md
+src/main/resources/application-secrets.yaml
