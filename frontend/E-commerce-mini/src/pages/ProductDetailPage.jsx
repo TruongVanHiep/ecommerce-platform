@@ -67,18 +67,18 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="mb-6 text-sm text-slate-500">
-          <Link to="/" className="hover:text-indigo-600 transition-colors">Trang chủ</Link>
+    <div className="min-h-screen bg-bg-light py-8">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <div className="mb-6 text-sm text-text-muted-light">
+          <Link to="/" className="hover:text-accent transition-colors">Trang chủ</Link>
           <span className="mx-2">/</span>
           <span className="text-slate-700">Chi tiết sản phẩm</span>
         </div>
 
         {loading && (
-          <div className="bg-white rounded-3xl shadow-sm p-8 animate-pulse">
+          <div className="bg-white rounded-[28px] border border-slate-200/70 p-8 animate-pulse">
             <div className="grid lg:grid-cols-2 gap-8">
-              <div className="aspect-square rounded-3xl bg-slate-100" />
+              <div className="aspect-square rounded-[20px] bg-slate-100" />
               <div className="space-y-4">
                 <div className="h-6 w-1/3 bg-slate-100 rounded" />
                 <div className="h-10 w-2/3 bg-slate-100 rounded" />
@@ -91,12 +91,12 @@ export default function ProductDetailPage() {
         )}
 
         {error && !loading && (
-          <div className="bg-white rounded-3xl shadow-sm p-8 text-center">
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">Chi tiết sản phẩm</h1>
-            <p className="text-slate-600 mb-6">{error}</p>
+          <div className="bg-white rounded-[28px] border border-slate-200/70 p-8 text-center">
+            <h1 className="text-2xl font-semibold text-slate-900 mb-2">Chi tiết sản phẩm</h1>
+            <p className="text-text-muted-light mb-6">{error}</p>
             <Link
               to="/"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-accent hover:bg-accent-dark text-white font-semibold transition-colors"
             >
               Quay lại trang chủ
             </Link>
@@ -104,10 +104,10 @@ export default function ProductDetailPage() {
         )}
 
         {!loading && product && (
-          <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-[28px] border border-slate-200/70 overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-0">
               <div className="bg-slate-50 p-6 sm:p-10 flex items-center justify-center">
-                <div className="w-full aspect-square max-w-[620px] rounded-3xl overflow-hidden bg-white shadow-inner flex items-center justify-center p-8">
+                <div className="w-full aspect-square max-w-[620px] rounded-[20px] overflow-hidden bg-white flex items-center justify-center p-8">
                   <img
                     src={product.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop"}
                     alt={product.title || product.name}
@@ -118,18 +118,18 @@ export default function ProductDetailPage() {
 
               <div className="p-6 sm:p-10 lg:p-12 flex flex-col gap-6">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 mb-3">
+                  <p className="text-sm font-semibold uppercase tracking-[0.3em] text-accent mb-3">
                     {product.category || "Gadget"}
                   </p>
-                  <h1 className="text-3xl sm:text-4xl font-black text-slate-900 leading-tight">
+                  <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 leading-tight tracking-tight">
                     {product.title || product.name}
                   </h1>
                 </div>
 
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <p className="text-sm text-slate-400 mb-1">Giá bán</p>
-                    <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+                    <p className="text-sm text-text-muted-light mb-1">Giá bán</p>
+                    <div className="text-4xl sm:text-5xl font-semibold text-slate-900 tracking-tight">
                       {formatVND(product.price)}
                     </div>
                     {product.originalPrice != null && (
@@ -140,13 +140,13 @@ export default function ProductDetailPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-sm text-slate-400 mb-1">Stock</p>
-                    <p className="text-lg font-bold text-slate-900">{stockLabel}</p>
+                    <p className="text-sm text-text-muted-light mb-1">Stock</p>
+                    <p className="text-lg font-semibold text-slate-900">{stockLabel}</p>
                   </div>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-5 sm:p-6">
-                  <p className="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wider">Mô tả</p>
+                  <p className="text-sm font-semibold text-text-muted-light mb-3 uppercase tracking-wider">Mô tả</p>
                   <p className="text-slate-700 leading-7">
                     {product.description || "Thiết kế hiện đại, tinh tế cùng hiệu năng vượt trội mang lại trải nghiệm tuyệt vời."}
                   </p>
@@ -154,7 +154,7 @@ export default function ProductDetailPage() {
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 p-5">
                   <div>
-                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Số lượng</p>
+                    <p className="text-sm font-semibold text-text-muted-light uppercase tracking-wider mb-2">Số lượng</p>
                     <div className="flex items-center rounded-xl border border-slate-200 overflow-hidden w-fit">
                       <button
                         type="button"
@@ -184,7 +184,7 @@ export default function ProductDetailPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Trạng thái</p>
+                    <p className="text-sm font-semibold text-text-muted-light uppercase tracking-wider mb-2">Trạng thái</p>
                     <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${isOutOfStock ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
                       {isOutOfStock ? "Hết hàng" : "Còn hàng"}
                     </span>
@@ -196,13 +196,13 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={handleAddToCart}
                     disabled={isOutOfStock}
-                    className="flex-1 inline-flex items-center justify-center px-6 py-4 rounded-2xl bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold transition-colors"
+                    className="flex-1 inline-flex items-center justify-center px-6 py-4 rounded-full bg-slate-900 hover:bg-accent disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold transition-colors"
                   >
-                    {isOutOfStock ? "Hết hàng" : "Add to cart"}
+                    {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ"}
                   </button>
                   <Link
                     to="/"
-                    className="inline-flex items-center justify-center px-6 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-colors"
+                    className="inline-flex items-center justify-center px-6 py-4 rounded-full border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold transition-colors"
                   >
                     Tiếp tục mua sắm
                   </Link>

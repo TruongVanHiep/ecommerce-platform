@@ -104,7 +104,7 @@ export default function ProductReviews({ productId }) {
     : null;
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 mt-6">
+    <div className="bg-white rounded-[28px] border border-slate-200/70 p-6 sm:p-8 mt-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-slate-900">Đánh giá sản phẩm</h2>
         {avgRating && (
@@ -127,14 +127,14 @@ export default function ProductReviews({ productId }) {
             onChange={(e) => setComment(e.target.value)}
             rows="3"
             placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này..."
-            className="w-full mt-3 px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 transition-all resize-none"
+            className="w-full mt-3 px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-accent transition-all resize-none"
           />
           {formError && <p className="text-red-500 text-xs font-semibold mt-2">{formError}</p>}
           <div className="flex items-center gap-3 mt-3">
             <button
               type="submit"
               disabled={submitting}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2 rounded-lg transition-colors disabled:opacity-60"
+              className="bg-accent hover:bg-accent-dark text-white font-bold text-sm px-5 py-2 rounded-lg transition-colors disabled:opacity-60"
             >
               {submitting ? "Đang gửi..." : editingId ? "Cập nhật" : "Gửi đánh giá"}
             </button>
@@ -151,13 +151,13 @@ export default function ProductReviews({ productId }) {
         </form>
       ) : (
         <div className="mb-8 bg-slate-50 rounded-2xl p-5 text-sm text-slate-600">
-          <Link to="/login" className="text-indigo-600 font-bold hover:underline">Đăng nhập</Link> để viết đánh giá.
+          <Link to="/login" className="text-accent font-bold hover:underline">Đăng nhập</Link> để viết đánh giá.
         </div>
       )}
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-accent/15 border-t-accent rounded-full animate-spin" />
         </div>
       ) : reviews.length === 0 ? (
         <p className="text-sm text-slate-400 text-center py-8">Chưa có đánh giá nào cho sản phẩm này.</p>
@@ -176,7 +176,7 @@ export default function ProductReviews({ productId }) {
                   </span>
                   {user?.username && user.username === review.username && (
                     <div className="flex items-center gap-2 text-xs font-semibold">
-                      <button type="button" onClick={() => handleEdit(review)} className="text-indigo-600 hover:underline">Sửa</button>
+                      <button type="button" onClick={() => handleEdit(review)} className="text-accent hover:underline">Sửa</button>
                       <button type="button" onClick={() => handleDelete(review.id)} className="text-red-500 hover:underline">Xóa</button>
                     </div>
                   )}

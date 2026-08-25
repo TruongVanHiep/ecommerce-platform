@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, ENDPOINT_PUBLIC).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                // Xem review là public (giống mọi sàn TMĐT) — chỉ viết/sửa/xoá mới cần đăng nhập.
+                .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll()
 
                 // Actuator: health/info/prometheus/metrics — cần public để Docker healthcheck
                 // và Prometheus scrape được (chỉ những endpoint này được expose, xem application.yaml)

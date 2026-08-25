@@ -58,16 +58,16 @@ export default function AdminOrdersPage() {
 
       {loading && (
         <div className="flex justify-center py-20">
-          <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-accent/15 border-t-accent rounded-full animate-spin" />
         </div>
       )}
 
       {error && !loading && (
-        <div className="bg-white rounded-lg shadow-sm p-8 text-center text-red-600">{error}</div>
+        <div className="bg-white rounded-2xl border border-slate-200/70 p-8 text-center text-red-600">{error}</div>
       )}
 
       {!loading && !error && (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200/70 border border-slate-100 overflow-hidden">
           {orders.map((order) => (
             <div key={order.orderId} className="border-b border-slate-50 last:border-b-0">
               <div className="p-4 flex flex-wrap items-center justify-between gap-3">
@@ -84,12 +84,12 @@ export default function AdminOrdersPage() {
                 </button>
 
                 <div className="flex items-center gap-4">
-                  <span className="font-bold text-indigo-600 text-sm">{formatVND(order.totalPrice)}</span>
+                  <span className="font-bold text-accent text-sm">{formatVND(order.totalPrice)}</span>
                   <select
                     value={order.status}
                     disabled={updatingId === order.orderId}
                     onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                    className="text-xs font-semibold border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-indigo-500 bg-white"
+                    className="text-xs font-semibold border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-accent bg-white"
                   >
                     {STATUS_OPTIONS.map((s) => (
                       <option key={s} value={s}>{STATUS_LABELS[s]}</option>
