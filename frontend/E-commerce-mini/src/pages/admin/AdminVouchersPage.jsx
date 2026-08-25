@@ -135,7 +135,7 @@ export default function AdminVouchersPage() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2.5 rounded-lg transition-colors"
+          className="bg-accent hover:bg-accent-dark text-white font-bold text-sm px-5 py-2.5 rounded-lg transition-colors"
         >
           + Tạo voucher
         </button>
@@ -143,16 +143,16 @@ export default function AdminVouchersPage() {
 
       {loading && (
         <div className="flex justify-center py-20">
-          <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-accent/15 border-t-accent rounded-full animate-spin" />
         </div>
       )}
 
       {error && !loading && (
-        <div className="bg-white rounded-lg shadow-sm p-8 text-center text-red-600">{error}</div>
+        <div className="bg-white rounded-2xl border border-slate-200/70 p-8 text-center text-red-600">{error}</div>
       )}
 
       {!loading && !error && (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-x-auto">
+        <div className="bg-white rounded-2xl border border-slate-200/70 border border-slate-100 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs text-slate-500 uppercase">
@@ -188,7 +188,7 @@ export default function AdminVouchersPage() {
                     </span>
                   </td>
                   <td className="p-3 text-right space-x-3 text-xs font-semibold">
-                    <button type="button" onClick={() => openEditForm(v)} className="text-indigo-600 hover:underline">Sửa</button>
+                    <button type="button" onClick={() => openEditForm(v)} className="text-accent hover:underline">Sửa</button>
                     <button type="button" onClick={() => handleDelete(v.id)} className="text-red-500 hover:underline">Xóa</button>
                   </td>
                 </tr>
@@ -203,7 +203,7 @@ export default function AdminVouchersPage() {
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl overflow-hidden border border-slate-100 my-8">
+          <div className="bg-white rounded-[24px] w-full max-w-lg overflow-hidden border border-slate-200 my-8">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-900 text-base">{editingId ? "Sửa voucher" : "Tạo voucher mới"}</h3>
               <button type="button" onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100">
@@ -222,12 +222,12 @@ export default function AdminVouchersPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Mã voucher</label>
                   <input type="text" name="code" value={form.code} onChange={handleChange} disabled={!!editingId}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500 uppercase disabled:bg-slate-50" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent uppercase disabled:bg-slate-50" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Loại giảm giá</label>
                   <select name="discountType" value={form.discountType} onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500 bg-white">
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent bg-white">
                     <option value="PERCENT">Phần trăm (%)</option>
                     <option value="FIXED_AMOUNT">Số tiền cố định</option>
                   </select>
@@ -237,7 +237,7 @@ export default function AdminVouchersPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Mô tả</label>
                 <input type="text" name="description" value={form.description} onChange={handleChange}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -246,13 +246,13 @@ export default function AdminVouchersPage() {
                     Giá trị giảm {form.discountType === "PERCENT" ? "(%)" : "(VND)"}
                   </label>
                   <input type="number" name="discountValue" value={form.discountValue} onChange={handleChange} min="0"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Giảm tối đa (VND)</label>
                   <input type="number" name="maxDiscountAmount" value={form.maxDiscountAmount} onChange={handleChange} min="0"
                     placeholder="Không giới hạn"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
                 </div>
               </div>
 
@@ -260,13 +260,13 @@ export default function AdminVouchersPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Đơn tối thiểu (VND)</label>
                   <input type="number" name="minOrderValue" value={form.minOrderValue} onChange={handleChange} min="0"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Giới hạn lượt dùng</label>
                   <input type="number" name="usageLimit" value={form.usageLimit} onChange={handleChange} min="0"
                     placeholder="Không giới hạn"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
                 </div>
               </div>
 
@@ -274,17 +274,17 @@ export default function AdminVouchersPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Bắt đầu</label>
                   <input type="datetime-local" name="startDate" value={form.startDate} onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Kết thúc</label>
                   <input type="datetime-local" name="endDate" value={form.endDate} onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-indigo-500" />
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded text-sm outline-none focus:border-accent" />
                 </div>
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600">
-                <input type="checkbox" name="active" checked={form.active} onChange={handleChange} className="accent-indigo-600 w-4 h-4" />
+                <input type="checkbox" name="active" checked={form.active} onChange={handleChange} className="accent-accent w-4 h-4" />
                 Kích hoạt voucher
               </label>
 
@@ -294,7 +294,7 @@ export default function AdminVouchersPage() {
                   Hủy
                 </button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded transition-colors disabled:opacity-60">
+                  className="flex-1 py-2.5 bg-accent hover:bg-accent-dark text-white font-bold rounded transition-colors disabled:opacity-60">
                   {saving ? "Đang lưu..." : "Lưu voucher"}
                 </button>
               </div>
