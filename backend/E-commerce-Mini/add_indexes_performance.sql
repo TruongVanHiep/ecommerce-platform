@@ -1,0 +1,31 @@
+-- =====================================================
+-- Bổ sung index tăng performance
+-- Chạy trên database e_commerce_mini
+--
+-- Các index đơn trên khoá ngoại (user_id, product_id, voucher_id, ...)
+-- đã được MySQL InnoDB tự tạo kèm theo FOREIGN KEY constraint do Hibernate
+-- sinh ra, nên KHÔNG cần khai báo lại ở đây.
+--
+-- Các thay đổi sau đã được áp dụng trực tiếp qua entity (Hibernate sẽ tự
+-- ALTER TABLE khi app khởi động với ddl-auto=update), không cần chạy tay:
+--   - categories.name            -> index thường (Category.java)
+--   - cart_items(cart_id, product_id)   -> unique index (CartItem.java)
+--   - voucher_usages(voucher_id, user_id) -> unique index (VoucherUsage.java)
+--
+-- File này chỉ chứa loại index mà JPA/Hibernate không có annotation chuẩn
+-- để tạo được (FULLTEXT), nên phải chạy tay 1 lần.
+-- =====================================================
+
+-- =====================
+-- PRODUCTS: tìm kiếm theo tên (ProductRepository.findByNameContainingIgnoreCase)
+-- Query hiện tại dùng LIKE %keyword% -> B-tree index thường không dùng được
+-- vì wildcard ở đầu chuỗi. FULLTEXT index giải quyết đúng bài toán search.
+-- =====================
+ALTER TABLE products ADD FULLTEXT INDEX idx_products_name_fulltext (name);
+
+-- Sau khi có FULLTEXT index, đổi query trong ProductRepository sang:
+--   @Query(value = "SELECT * FROM products WHERE MATCH(name) AGAINST (:kw IN BOOLEAN MODE)",
+--          countQuery = "SELECT count(*) FROM products WHERE MATCH(name) AGAINST (:kw IN BOOLEAN MODE)",
+--          nativeQuery = true)
+--   Page<Product> searchByNameFullText(@Param("kw") String keyword, Pageable pageable);
+-- (giữ nguyên findByNameContainingIgnoreCase cũ nếu muốn fallback cho từ khoá quá ngắn)
