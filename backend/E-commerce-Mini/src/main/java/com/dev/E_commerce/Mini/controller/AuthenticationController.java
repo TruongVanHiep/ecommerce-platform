@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.AuthenticationRequest;
 import com.dev.E_commerce.Mini.dto.request.IntrospectRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
@@ -27,7 +28,7 @@ public class AuthenticationController {
     AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    public ApiResponse<AuthenticationResponse> login(@RequestBody AuthenticationRequest request){
+    public ApiResponse<AuthenticationResponse> login(@RequestBody @Valid AuthenticationRequest request){
         var authentication = authenticationService.authenticate(request);
         return ApiResponse.<AuthenticationResponse>builder()
                 .result(authentication)
@@ -35,7 +36,7 @@ public class AuthenticationController {
     }
     
     @PostMapping("/introspectToken")
-    public ApiResponse<IntrospectResponse> introspectToken(@RequestBody IntrospectRequest request){
+    public ApiResponse<IntrospectResponse> introspectToken(@RequestBody @Valid IntrospectRequest request){
         return ApiResponse.<IntrospectResponse>builder()
                 .result(authenticationService.introspectToken(request))
                 .build();

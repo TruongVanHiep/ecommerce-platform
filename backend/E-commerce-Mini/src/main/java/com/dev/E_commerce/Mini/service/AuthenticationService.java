@@ -73,8 +73,11 @@ public class AuthenticationService {
 
     @Transactional(readOnly = true)
     public AuthenticationResponse authenticate(AuthenticationRequest request){
+        // Sai username và sai mật khẩu đều trả về CÙNG một lỗi UNAUTHENTICATED.
+        // Trước đây username không tồn tại trả 404 còn sai mật khẩu trả 401,
+        // giúp kẻ tấn công dò ra danh sách username hợp lệ (user enumeration).
         var user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if(!authenticated)

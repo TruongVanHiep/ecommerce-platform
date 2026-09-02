@@ -22,10 +22,33 @@ public enum ErrorCode {
     CART_EMPTY(1016, "Cart empty", HttpStatus.BAD_REQUEST),
     PRODUCT_OUT_OF_STOCK(1041, "Product does not have enough stock", HttpStatus.BAD_REQUEST),
 
-    USERNAME_INVALID(1018, "Username must be at least {min} characters",HttpStatus.BAD_REQUEST),
+    // 1024: sửa trùng mã — trước đây USERNAME_INVALID dùng chung mã 1018 với UNAUTHORIZED
+    USERNAME_INVALID(1024, "Username must be at least {min} characters",HttpStatus.BAD_REQUEST),
     PASSWORD_INVALID(1019, "Password must be at least {min} characters",HttpStatus.BAD_REQUEST),
     INVALID_DOB(1020,"Your age must be at least {min}",HttpStatus.BAD_REQUEST),
     INVALID_KEY(1021,"Invalid message key",HttpStatus.BAD_REQUEST),
+
+    // --- Validation dữ liệu đầu vào ---
+    INVALID_INPUT(1050, "Dữ liệu gửi lên không hợp lệ", HttpStatus.BAD_REQUEST),
+    MALFORMED_REQUEST(1051, "Nội dung request không đọc được hoặc sai định dạng", HttpStatus.BAD_REQUEST),
+    PAYLOAD_TOO_LARGE(1052, "Dữ liệu gửi lên vượt quá giới hạn cho phép", HttpStatus.PAYLOAD_TOO_LARGE),
+    EMAIL_INVALID(1053, "Email không hợp lệ", HttpStatus.BAD_REQUEST),
+    PHONE_INVALID(1054, "Số điện thoại không hợp lệ", HttpStatus.BAD_REQUEST),
+    FULL_NAME_INVALID(1055, "Họ tên không hợp lệ", HttpStatus.BAD_REQUEST),
+    ADDRESS_INVALID(1056, "Địa chỉ không hợp lệ", HttpStatus.BAD_REQUEST),
+    NAME_INVALID(1057, "Tên không hợp lệ", HttpStatus.BAD_REQUEST),
+    DESCRIPTION_INVALID(1058, "Mô tả không hợp lệ", HttpStatus.BAD_REQUEST),
+    PRICE_INVALID(1059, "Giá phải lớn hơn 0", HttpStatus.BAD_REQUEST),
+    STOCK_INVALID(1060, "Số lượng tồn kho không hợp lệ", HttpStatus.BAD_REQUEST),
+    RATING_INVALID(1061, "Đánh giá phải từ 1 đến 5 sao", HttpStatus.BAD_REQUEST),
+    COMMENT_INVALID(1062, "Nội dung đánh giá quá dài", HttpStatus.BAD_REQUEST),
+    IMAGE_URL_INVALID(1063, "Đường dẫn ảnh không hợp lệ", HttpStatus.BAD_REQUEST),
+    VOUCHER_CODE_INVALID(1064, "Mã voucher không hợp lệ", HttpStatus.BAD_REQUEST),
+    DISCOUNT_VALUE_INVALID(1065, "Giá trị giảm giá không hợp lệ", HttpStatus.BAD_REQUEST),
+    REQUIRED_FIELD_MISSING(1066, "Thiếu trường bắt buộc", HttpStatus.BAD_REQUEST),
+
+    // --- Rate limiting ---
+    TOO_MANY_REQUESTS(1070, "Quá nhiều yêu cầu. Vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS),
 
     ADDRESS_NOT_EXISTED(1030, "Address not existed", HttpStatus.NOT_FOUND),
 

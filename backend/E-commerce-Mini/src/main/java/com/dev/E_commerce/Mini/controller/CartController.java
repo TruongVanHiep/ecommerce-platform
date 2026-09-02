@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.CartItemRequest;
 import com.dev.E_commerce.Mini.dto.request.UpdateCartItemRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
@@ -28,7 +29,7 @@ public class CartController {
     }
 
     @PostMapping("/items")
-    public ApiResponse<CartResponse> addToCart(@RequestBody CartItemRequest request){
+    public ApiResponse<CartResponse> addToCart(@RequestBody @Valid CartItemRequest request){
         return ApiResponse.<CartResponse>builder()
                 .result(cartService.addToCart(request))
                 .build();
@@ -37,7 +38,7 @@ public class CartController {
     @PutMapping("/items/{cartItemId}")
     public ApiResponse<CartResponse> updateCartItem(
             @PathVariable Long cartItemId,
-            @RequestBody UpdateCartItemRequest request){
+            @RequestBody @Valid UpdateCartItemRequest request){
         return ApiResponse.<CartResponse>builder()
                 .result(cartService.updateCartItem(cartItemId,request))
                 .build();

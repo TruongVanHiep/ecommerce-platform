@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -22,6 +23,10 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+// Bật kiểm tra @PreAuthorize ở tầng method. Trước đây annotation này bị đặt
+// nhầm trên AdminOrderController (một @RestController) — vẫn chạy nhưng sai chỗ
+// và dễ bị xoá nhầm khi refactor controller.
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -92,6 +97,9 @@ public class SecurityConfig {
         ));
 
         configuration.setAllowedHeaders(List.of("*"));
+        // Không có dòng này, trình duyệt sẽ KHÔNG đọc được header rate limit
+        // (JS chỉ thấy được các header nằm trong danh sách expose).
+        configuration.setExposedHeaders(List.of("Retry-After", "X-RateLimit-Remaining"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

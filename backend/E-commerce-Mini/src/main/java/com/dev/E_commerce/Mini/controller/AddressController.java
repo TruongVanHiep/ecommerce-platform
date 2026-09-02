@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.AddressRequest;
 import com.dev.E_commerce.Mini.dto.response.AddressResponse;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
@@ -26,14 +27,14 @@ public class AddressController {
     }
 
     @PostMapping
-    public ApiResponse<AddressResponse> createAddress(@RequestBody AddressRequest request) {
+    public ApiResponse<AddressResponse> createAddress(@RequestBody @Valid AddressRequest request) {
         return ApiResponse.<AddressResponse>builder()
                 .result(addressService.createAddress(request))
                 .build();
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<AddressResponse> updateAddress(@PathVariable Long id, @RequestBody AddressRequest request) {
+    public ApiResponse<AddressResponse> updateAddress(@PathVariable Long id, @RequestBody @Valid AddressRequest request) {
         return ApiResponse.<AddressResponse>builder()
                 .result(addressService.updateAddress(id, request))
                 .build();

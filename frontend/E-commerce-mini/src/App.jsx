@@ -3,7 +3,6 @@ import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import DebugPage from './pages/DebugPage'
 import HomePage from './pages/HomePage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import CartPage from './pages/CartPage'
@@ -35,7 +34,6 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/oauth2/redirect" element={<OAuth2RedirectPage />} />
-          <Route path="/debug" element={<DebugPage />} />
 
           <Route path="/admin" element={<AdminRoute />}>
             <Route element={<AdminLayout />}>

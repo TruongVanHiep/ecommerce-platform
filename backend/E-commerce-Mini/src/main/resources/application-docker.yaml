@@ -1,6 +1,17 @@
 spring:
   datasource:
     url: jdbc:mysql://mysql:3306/e_commerce_mini?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+  jpa:
+    # Không in câu SQL ra log khi chạy container — log được ship sang Loki,
+    # SQL chứa dữ liệu người dùng và làm nhiễu log.
+    show-sql: false
+
+# Hạ mức log của Spring Security/Web xuống INFO: mức DEBUG lộ chi tiết
+# nội bộ cơ chế xác thực ra log tập trung.
+logging:
+  level:
+    org.springframework.security: INFO
+    org.springframework.web: INFO
 
 management:
   otlp:

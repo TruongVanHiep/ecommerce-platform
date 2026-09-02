@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.ApplyVoucherRequest;
 import com.dev.E_commerce.Mini.dto.request.VoucherRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
@@ -29,7 +30,7 @@ public class VoucherController {
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @PostMapping
-    public ApiResponse<VoucherResponse> createVoucher(@RequestBody VoucherRequest request) {
+    public ApiResponse<VoucherResponse> createVoucher(@RequestBody @Valid VoucherRequest request) {
         return ApiResponse.<VoucherResponse>builder()
                 .result(voucherService.createVoucher(request))
                 .build();
@@ -37,7 +38,7 @@ public class VoucherController {
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @PutMapping("/{id}")
-    public ApiResponse<VoucherResponse> updateVoucher(@PathVariable Long id, @RequestBody VoucherRequest request) {
+    public ApiResponse<VoucherResponse> updateVoucher(@PathVariable Long id, @RequestBody @Valid VoucherRequest request) {
         return ApiResponse.<VoucherResponse>builder()
                 .result(voucherService.updateVoucher(id, request))
                 .build();
@@ -59,7 +60,7 @@ public class VoucherController {
     }
 
     @PostMapping("/apply")
-    public ApiResponse<VoucherPreviewResponse> applyVoucher(@RequestBody ApplyVoucherRequest request) {
+    public ApiResponse<VoucherPreviewResponse> applyVoucher(@RequestBody @Valid ApplyVoucherRequest request) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));

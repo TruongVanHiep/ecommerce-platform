@@ -7,10 +7,14 @@ import com.dev.E_commerce.Mini.service.PermissionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+// Chỉ ADMIN được quản lý permission (xem ghi chú ở RoleController).
+@PreAuthorize("hasAuthority('SCOPE_ADMIN')")
 @Slf4j
 @RestController
 @RequestMapping("/api/permissions")
@@ -20,7 +24,7 @@ public class PermissionController {
     PermissionService permissionService;
 
     @PostMapping
-    ApiResponse<PermissionResponse> createPermission(@RequestBody PermissionRequest request){
+    ApiResponse<PermissionResponse> createPermission(@RequestBody @Valid PermissionRequest request){
         return ApiResponse.<PermissionResponse>builder()
                 .result(permissionService.createPermission(request))
                 .build();

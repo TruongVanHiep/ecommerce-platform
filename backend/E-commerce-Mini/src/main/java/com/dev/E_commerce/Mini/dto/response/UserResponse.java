@@ -16,7 +16,9 @@ public class UserResponse {
     Long id;
     String username;
     String email;
-    String password;
+    // CỐ Ý KHÔNG có field `password`: trước đây MapStruct map cả hash BCrypt
+    // của mật khẩu ra response, tức mọi API trả UserResponse đều lộ hash
+    // cho client (có thể mang đi crack offline).
     String fullName;
     LocalDate dob;
     String phone;

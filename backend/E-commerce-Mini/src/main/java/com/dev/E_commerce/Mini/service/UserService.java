@@ -17,8 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Service
@@ -44,13 +44,32 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public UserResponse updateUser(Long id,UserUpdateRequest request){
+    /**
+     * Chỉ chính chủ tài khoản hoặc ADMIN mới được cập nhật. Trước đây hàm này
+     * không kiểm tra quyền và còn gán roles lấy thẳng từ request, nên bất kỳ
+     * user nào cũng có thể tự cấp quyền ADMIN hoặc sửa hồ sơ người khác.
+     * Việc đổi vai trò đã được tách khỏi endpoint này (xem UserUpdateRequest).
+     */
+    public UserResponse updateUser(Long id, UserUpdateRequest request){
         User user = userRepository.findById(id).orElseThrow(() ->
                 new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> "SCOPE_ADMIN".equals(grantedAuthority.getAuthority()));
+        boolean isOwner = user.getUsername().equals(authentication.getName());
+        if (!isAdmin && !isOwner) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         userMapper.updateUser(user, request);
-        request.setPassword(passwordEncoder.encode(request.getPassword()));
-        var role = roleRepository.findAllById(request.getRoles());
-        user.setRoles(new HashSet<>(role));
+
+        // Mapper cố tình bỏ qua password; chỉ đổi khi client thực sự gửi lên,
+        // và luôn hash trước khi ghi vào entity.
+        if (StringUtils.hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
         return userMapper.toUserResponse(userRepository.save(user));
     }
 

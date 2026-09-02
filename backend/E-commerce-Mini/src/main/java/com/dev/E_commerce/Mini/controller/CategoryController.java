@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.CategoryRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
 import com.dev.E_commerce.Mini.dto.response.CategoryResponse;
@@ -28,7 +29,7 @@ public class CategoryController {
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @PostMapping
-    public ApiResponse<CategoryResponse> createCategory(@RequestBody CategoryRequest request) {
+    public ApiResponse<CategoryResponse> createCategory(@RequestBody @Valid CategoryRequest request) {
         return ApiResponse.<CategoryResponse>builder()
                 .result(categoryService.createCategory(request))
                 .build();
@@ -36,7 +37,7 @@ public class CategoryController {
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @PutMapping("/{id}")
-    public ApiResponse<CategoryResponse> updateCategory(@PathVariable Long id, @RequestBody CategoryRequest request) {
+    public ApiResponse<CategoryResponse> updateCategory(@PathVariable Long id, @RequestBody @Valid CategoryRequest request) {
         return ApiResponse.<CategoryResponse>builder()
                 .result(categoryService.updateCategory(id, request))
                 .build();

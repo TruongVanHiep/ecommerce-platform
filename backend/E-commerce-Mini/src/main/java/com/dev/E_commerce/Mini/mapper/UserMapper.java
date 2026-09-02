@@ -16,8 +16,11 @@ public interface UserMapper {
     @Mapping(target = "roles", ignore = true)
     User toUser(UserRegisterRequest request);
 
+    // password KHÔNG được map tự động: mật khẩu phải được hash trong service
+    // trước khi gán vào entity (trước đây map thẳng chuỗi thô vào DB).
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "password", ignore = true)
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
 }

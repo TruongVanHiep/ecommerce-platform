@@ -1,11 +1,20 @@
 server:
   port: 8080
+  # Giới hạn kích thước request để chặn payload quá lớn gây cạn RAM/CPU.
+  max-http-request-header-size: 16KB
+  tomcat:
+    max-http-form-post-size: 256KB
+    max-swallow-size: 256KB
 
 spring:
-  config:
-    import: optional:application-secrets.yaml
+  # Secrets được nạp từ biến môi trường (file .env ở gốc repo).
+  # Xem SECURITY.md để biết cách nạp .env khi chạy bằng IntelliJ.
   application:
     name: E-commerce-Mini
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
   security:
     oauth2:
       client:
@@ -45,6 +54,17 @@ jwt:
 app:
   oauth2:
     redirect-uri: http://localhost:5173/oauth2/redirect
+  admin:
+    # Bỏ trống => KHÔNG seed tài khoản admin (tránh tài khoản mặc định admin/admin).
+    init-password: ${ADMIN_INIT_PASSWORD:}
+  rate-limit:
+    # Giới hạn nghiêm ngặt cho các route xác thực (login, đăng ký, áp voucher)
+    strict-capacity: 5
+    strict-window-minutes: 15
+    # Giới hạn cho các request ghi dữ liệu (POST/PUT/DELETE) còn lại
+    write-capacity: 60
+    # Giới hạn chung cho mọi request khác
+    global-capacity: 200
 
 logging:
   level:

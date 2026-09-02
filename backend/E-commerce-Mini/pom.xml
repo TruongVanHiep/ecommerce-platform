@@ -127,6 +127,18 @@
 			<version>8.0</version>
 		</dependency>
 
+		<!-- Rate limiting: thuật toán token bucket, lưu trong bộ nhớ tiến trình.
+		     Backend chỉ chạy 1 instance nên chưa cần Redis để chia sẻ trạng thái. -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j_jdk17-core</artifactId>
+			<version>8.19.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>

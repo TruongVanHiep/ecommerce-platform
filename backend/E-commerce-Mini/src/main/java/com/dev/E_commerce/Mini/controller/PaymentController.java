@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.CreatePaymentRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
 import com.dev.E_commerce.Mini.dto.response.PaymentResponse;
@@ -19,7 +20,7 @@ public class PaymentController {
     @PostMapping
     public ApiResponse<PaymentResponse> createPayment(
             @PathVariable Long orderId,
-            @RequestBody CreatePaymentRequest request
+            @RequestBody @Valid CreatePaymentRequest request
     ) {
         return ApiResponse.<PaymentResponse>builder()
                 .result(paymentService.createPaymentForOrder(orderId, request))

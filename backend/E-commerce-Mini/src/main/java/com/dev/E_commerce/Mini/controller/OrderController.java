@@ -1,5 +1,6 @@
 package com.dev.E_commerce.Mini.controller;
 
+import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.OrderRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
 import com.dev.E_commerce.Mini.dto.response.OrderResponse;
@@ -20,7 +21,7 @@ public class OrderController {
     OrderService orderService;
 
     @PostMapping
-    public ApiResponse<OrderResponse> createOrder(@RequestBody OrderRequest request){
+    public ApiResponse<OrderResponse> createOrder(@RequestBody @Valid OrderRequest request){
         return ApiResponse.<OrderResponse>builder()
                 .result(orderService.createOrder(request))
                 .build();

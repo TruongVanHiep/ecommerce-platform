@@ -6,11 +6,16 @@ import com.dev.E_commerce.Mini.dto.response.RoleResponse;
 import com.dev.E_commerce.Mini.service.RoleService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// Toàn bộ API quản lý vai trò chỉ dành cho ADMIN — trước đây mọi user đã
+// đăng nhập đều tạo/xoá được role, tức tự trao quyền cho chính mình.
+@PreAuthorize("hasAuthority('SCOPE_ADMIN')")
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -19,7 +24,7 @@ public class RoleController {
     RoleService roleService;
 
     @PostMapping
-    public ApiResponse<RoleResponse> createRole(@RequestBody RoleRequest request){
+    public ApiResponse<RoleResponse> createRole(@RequestBody @Valid RoleRequest request){
         return ApiResponse.<RoleResponse>builder()
                 .result(roleService.create(request))
                 .build();

@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,6 +45,8 @@ public class UserController {
                 .build();
     }
 
+    // Danh sách toàn bộ user là dữ liệu cá nhân của người khác — chỉ ADMIN được xem.
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @GetMapping
     public ApiResponse<List<UserResponse>> getAllUsers(){
         return ApiResponse.<List<UserResponse>>builder()
