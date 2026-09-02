@@ -7,6 +7,7 @@ import com.dev.E_commerce.Mini.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -29,6 +30,10 @@ public class ApplicationInitConfig {
      * Trước đây mật khẩu bị hardcode là "admin" — ai biết địa chỉ server đều
      * đăng nhập được bằng admin/admin. Bỏ trống biến này => không seed admin.
      */
+    // @NonFinal là bắt buộc: class dùng @FieldDefaults(makeFinal = true), nếu để
+    // final thì @RequiredArgsConstructor sẽ đưa field này vào constructor và
+    // Spring đi tìm một bean kiểu String để inject → app không khởi động được.
+    @NonFinal
     @Value("${app.admin.init-password:}")
     String adminInitPassword;
 
