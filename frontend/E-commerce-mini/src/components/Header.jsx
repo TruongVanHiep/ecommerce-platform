@@ -21,8 +21,10 @@ export default function Header() {
     navigate(searchValue.trim() ? `/?q=${encodeURIComponent(searchValue)}` : "/");
   };
 
-  const handleLogout = () => {
-    logout();
+  // logout giờ là async vì phải gọi backend thu hồi refresh token trước khi
+  // xoá phiên ở trình duyệt.
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 

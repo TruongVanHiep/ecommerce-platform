@@ -3,6 +3,7 @@ package com.dev.E_commerce.Mini.controller;
 import jakarta.validation.Valid;
 import com.dev.E_commerce.Mini.dto.request.AuthenticationRequest;
 import com.dev.E_commerce.Mini.dto.request.IntrospectRequest;
+import com.dev.E_commerce.Mini.dto.request.RefreshTokenRequest;
 import com.dev.E_commerce.Mini.dto.response.ApiResponse;
 import com.dev.E_commerce.Mini.dto.response.AuthenticationResponse;
 import com.dev.E_commerce.Mini.dto.response.IntrospectResponse;
@@ -35,6 +36,23 @@ public class AuthenticationController {
                 .build();
     }
     
+    /**
+     * Đổi refresh token lấy cặp token mới. Endpoint này phải PUBLIC vì lúc client
+     * gọi tới thì access token đã hết hạn — chính refresh token là thứ xác thực.
+     */
+    @PostMapping("/refresh")
+    public ApiResponse<AuthenticationResponse> refresh(@RequestBody @Valid RefreshTokenRequest request){
+        return ApiResponse.<AuthenticationResponse>builder()
+                .result(authenticationService.refresh(request))
+                .build();
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(@RequestBody @Valid RefreshTokenRequest request){
+        authenticationService.logout(request);
+        return ApiResponse.<Void>builder().build();
+    }
+
     @PostMapping("/introspectToken")
     public ApiResponse<IntrospectResponse> introspectToken(@RequestBody @Valid IntrospectRequest request){
         return ApiResponse.<IntrospectResponse>builder()

@@ -2,12 +2,15 @@ package com.dev.E_commerce.Mini.service;
 
 import com.dev.E_commerce.Mini.dto.request.AuthenticationRequest;
 import com.dev.E_commerce.Mini.dto.request.IntrospectRequest;
+import com.dev.E_commerce.Mini.dto.request.RefreshTokenRequest;
 import com.dev.E_commerce.Mini.dto.response.AuthenticationResponse;
 import com.dev.E_commerce.Mini.dto.response.IntrospectResponse;
+import com.dev.E_commerce.Mini.entity.RefreshToken;
 import com.dev.E_commerce.Mini.entity.Role;
 import com.dev.E_commerce.Mini.entity.User;
 import com.dev.E_commerce.Mini.exception.AppException;
 import com.dev.E_commerce.Mini.exception.ErrorCode;
+import com.dev.E_commerce.Mini.repository.RefreshTokenRepository;
 import com.dev.E_commerce.Mini.repository.RoleRepository;
 import com.dev.E_commerce.Mini.repository.UserRepository;
 import com.nimbusds.jose.*;
@@ -27,9 +30,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.security.SecureRandom;
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -42,10 +48,24 @@ public class AuthenticationService {
     PasswordEncoder passwordEncoder;
     UserRepository userRepository;
     RoleRepository roleRepository;
+    RefreshTokenRepository refreshTokenRepository;
+
+    SecureRandom secureRandom = new SecureRandom();
 
     @NonFinal
     @Value("${jwt.signerKey}")
     private String signerKey;
+
+    // @NonFinal là BẮT BUỘC: class này dùng @FieldDefaults(makeFinal = true),
+    // để final thì Lombok đưa field vào constructor và Spring sẽ đi tìm một bean
+    // kiểu long để inject → ứng dụng không khởi động được.
+    @NonFinal
+    @Value("${jwt.access-token-minutes:15}")
+    private long accessTokenMinutes;
+
+    @NonFinal
+    @Value("${jwt.refresh-token-days:7}")
+    private long refreshTokenDays;
 
     public IntrospectResponse introspectToken(IntrospectRequest request){
         boolean isValid = true;
@@ -71,7 +91,7 @@ public class AuthenticationService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request){
         // Sai username và sai mật khẩu đều trả về CÙNG một lỗi UNAUTHENTICATED.
         // Trước đây username không tồn tại trả 404 còn sai mật khẩu trả 401,
@@ -82,11 +102,78 @@ public class AuthenticationService {
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if(!authenticated)
             throw new AppException(ErrorCode.UNAUTHENTICATED);
-        var token = generateToken(user);
+
+        return buildTokenPair(user);
+    }
+
+    /**
+     * Đổi refresh token lấy cặp token mới.
+     *
+     * Áp dụng XOAY VÒNG (rotation): mỗi refresh token chỉ dùng được đúng 1 lần,
+     * dùng xong bị thu hồi và cấp cái mới. Nhờ vậy nếu token bị đánh cắp thì chỉ
+     * dùng được tới khi chủ thật sự refresh lần kế tiếp.
+     */
+    @Transactional
+    public AuthenticationResponse refresh(RefreshTokenRequest request){
+        RefreshToken stored = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
+
+        // Token đã thu hồi mà vẫn có người mang tới => nhiều khả năng đã bị đánh
+        // cắp và dùng lại. Huỷ toàn bộ phiên của user để chặn kẻ tấn công.
+        if (stored.isRevoked()) {
+            refreshTokenRepository.revokeAllByUser(stored.getUser());
+            log.warn("Phát hiện dùng lại refresh token đã thu hồi, thu hồi toàn bộ phiên. username={}",
+                    stored.getUser().getUsername());
+            throw new AppException(ErrorCode.REFRESH_TOKEN_REVOKED);
+        }
+
+        if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        stored.setRevoked(true);
+        refreshTokenRepository.save(stored);
+
+        return buildTokenPair(stored.getUser());
+    }
+
+    /**
+     * Đăng xuất: thu hồi refresh token trong DB. Access token đang cầm vẫn còn
+     * hiệu lực tới khi hết hạn (bản chất của JWT stateless), nhưng vì hạn chỉ
+     * còn vài phút nên rủi ro ở mức chấp nhận được.
+     */
+    @Transactional
+    public void logout(RefreshTokenRequest request){
+        // Cố tình KHÔNG báo lỗi khi token không tồn tại — nếu báo, endpoint này
+        // trở thành công cụ dò xem chuỗi token nào có thật trong hệ thống.
+        refreshTokenRepository.findByToken(request.getRefreshToken())
+                .ifPresent(refreshToken -> {
+                    refreshToken.setRevoked(true);
+                    refreshTokenRepository.save(refreshToken);
+                });
+    }
+
+    private AuthenticationResponse buildTokenPair(User user){
         return AuthenticationResponse.builder()
-                .token(token)
-                .isAuthenticated(authenticated)
+                .token(generateToken(user))
+                .refreshToken(createRefreshToken(user).getToken())
+                .isAuthenticated(true)
                 .build();
+    }
+
+    private RefreshToken createRefreshToken(User user){
+        // 256 bit ngẫu nhiên từ SecureRandom. KHÔNG dùng UUID.randomUUID() hay
+        // java.util.Random làm giá trị bảo mật vì chúng đoán được.
+        byte[] randomBytes = new byte[32];
+        secureRandom.nextBytes(randomBytes);
+        String tokenValue = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+        return refreshTokenRepository.save(RefreshToken.builder()
+                .token(tokenValue)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusDays(refreshTokenDays))
+                .revoked(false)
+                .build());
     }
 
     @Transactional
@@ -98,10 +185,7 @@ public class AuthenticationService {
                 .or(() -> userRepository.findByUsername(email))
                 .orElseGet(() -> createGoogleUser(email, fullName));
 
-        return AuthenticationResponse.builder()
-                .token(generateToken(user))
-                .isAuthenticated(true)
-                .build();
+        return buildTokenPair(user);
     }
 
     private User createGoogleUser(String email, String fullName) {
@@ -139,8 +223,10 @@ public class AuthenticationService {
                 .subject(user.getUsername())
                 .issuer("hiepdev.com")
                 .issueTime(new Date())
+                // Hạn ngắn (mặc định 15 phút): access token không thu hồi được nên
+                // phải sống ngắn; client tự gia hạn bằng refresh token.
                 .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli()
+                        Instant.now().plus(accessTokenMinutes, ChronoUnit.MINUTES).toEpochMilli()
                 ))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))

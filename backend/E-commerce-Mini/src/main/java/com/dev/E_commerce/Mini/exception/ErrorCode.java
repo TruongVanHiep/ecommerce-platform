@@ -47,6 +47,11 @@ public enum ErrorCode {
     DISCOUNT_VALUE_INVALID(1065, "Giá trị giảm giá không hợp lệ", HttpStatus.BAD_REQUEST),
     REQUIRED_FIELD_MISSING(1066, "Thiếu trường bắt buộc", HttpStatus.BAD_REQUEST),
 
+    // --- Refresh token ---
+    REFRESH_TOKEN_INVALID(1071, "Refresh token không hợp lệ", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_EXPIRED(1072, "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_REVOKED(1073, "Phiên đăng nhập đã bị thu hồi", HttpStatus.UNAUTHORIZED),
+
     // --- Rate limiting ---
     TOO_MANY_REQUESTS(1070, "Quá nhiều yêu cầu. Vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS),
 

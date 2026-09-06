@@ -40,7 +40,7 @@ export default function LoginPage() {
         };
         
         console.log("User Object:", user);
-        contextLogin(user, token);
+        contextLogin(user, token, response?.result?.refreshToken);
         navigate("/");
       } else {
         console.warn("Response không có token:", response);

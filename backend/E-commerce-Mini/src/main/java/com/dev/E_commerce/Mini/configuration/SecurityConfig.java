@@ -33,7 +33,9 @@ public class SecurityConfig {
     @Value("${jwt.signerKey}")
     private String signerKey;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final String[] ENDPOINT_PUBLIC = {"/api/users" , "/api/auth/login"};
+    // /auth/refresh và /auth/logout phải public: khi client gọi tới thì access token
+    // đã hết hạn, chính refresh token mới là thứ dùng để xác thực.
+    private final String[] ENDPOINT_PUBLIC = {"/api/users", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout"};
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity

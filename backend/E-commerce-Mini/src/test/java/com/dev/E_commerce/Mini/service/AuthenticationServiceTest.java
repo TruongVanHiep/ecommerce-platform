@@ -1,7 +1,9 @@
 package com.dev.E_commerce.Mini.service;
 
+import com.dev.E_commerce.Mini.entity.RefreshToken;
 import com.dev.E_commerce.Mini.entity.Role;
 import com.dev.E_commerce.Mini.entity.User;
+import com.dev.E_commerce.Mini.repository.RefreshTokenRepository;
 import com.dev.E_commerce.Mini.repository.RoleRepository;
 import com.dev.E_commerce.Mini.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,14 +40,22 @@ class AuthenticationServiceTest {
     RoleRepository roleRepository;
 
     @Mock
+    RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
     OAuth2User principal;
 
     AuthenticationService authenticationService;
 
     @BeforeEach
     void setUp() {
-        authenticationService = new AuthenticationService(passwordEncoder, userRepository, roleRepository);
+        authenticationService = new AuthenticationService(passwordEncoder, userRepository, roleRepository, refreshTokenRepository);
         ReflectionTestUtils.setField(authenticationService, "signerKey", "1234567890123456789012345678901234567890123456789012345678901234");
+        ReflectionTestUtils.setField(authenticationService, "accessTokenMinutes", 15L);
+        ReflectionTestUtils.setField(authenticationService, "refreshTokenDays", 7L);
+        // Repository tra ve chinh doi tuong duoc luu de test doc lai gia tri.
+        lenient().when(refreshTokenRepository.save(any(RefreshToken.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
