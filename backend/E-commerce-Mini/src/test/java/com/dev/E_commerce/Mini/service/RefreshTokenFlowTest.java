@@ -40,6 +40,7 @@ class RefreshTokenFlowTest {
     @Mock UserRepository userRepository;
     @Mock RoleRepository roleRepository;
     @Mock RefreshTokenRepository refreshTokenRepository;
+    @Mock RefreshTokenSecurityService refreshTokenSecurityService;
 
     AuthenticationService authenticationService;
 
@@ -48,7 +49,7 @@ class RefreshTokenFlowTest {
     @BeforeEach
     void setUp() {
         authenticationService = new AuthenticationService(
-                passwordEncoder, userRepository, roleRepository, refreshTokenRepository);
+                passwordEncoder, userRepository, roleRepository, refreshTokenRepository, refreshTokenSecurityService);
         ReflectionTestUtils.setField(authenticationService, "signerKey",
                 "1234567890123456789012345678901234567890123456789012345678901234");
         ReflectionTestUtils.setField(authenticationService, "accessTokenMinutes", 15L);
@@ -136,7 +137,7 @@ class RefreshTokenFlowTest {
                 .isEqualTo(ErrorCode.REFRESH_TOKEN_REVOKED);
 
         // Dấu hiệu token bị đánh cắp => phải huỷ mọi phiên của user
-        verify(refreshTokenRepository).revokeAllByUser(user);
+        verify(refreshTokenSecurityService).revokeAllSessions(user);
     }
 
     @Test

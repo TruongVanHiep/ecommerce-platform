@@ -43,13 +43,16 @@ class AuthenticationServiceTest {
     RefreshTokenRepository refreshTokenRepository;
 
     @Mock
+    RefreshTokenSecurityService refreshTokenSecurityService;
+
+    @Mock
     OAuth2User principal;
 
     AuthenticationService authenticationService;
 
     @BeforeEach
     void setUp() {
-        authenticationService = new AuthenticationService(passwordEncoder, userRepository, roleRepository, refreshTokenRepository);
+        authenticationService = new AuthenticationService(passwordEncoder, userRepository, roleRepository, refreshTokenRepository, refreshTokenSecurityService);
         ReflectionTestUtils.setField(authenticationService, "signerKey", "1234567890123456789012345678901234567890123456789012345678901234");
         ReflectionTestUtils.setField(authenticationService, "accessTokenMinutes", 15L);
         ReflectionTestUtils.setField(authenticationService, "refreshTokenDays", 7L);

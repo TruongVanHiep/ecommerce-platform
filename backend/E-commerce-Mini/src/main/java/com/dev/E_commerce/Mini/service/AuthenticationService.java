@@ -49,6 +49,7 @@ public class AuthenticationService {
     UserRepository userRepository;
     RoleRepository roleRepository;
     RefreshTokenRepository refreshTokenRepository;
+    RefreshTokenSecurityService refreshTokenSecurityService;
 
     SecureRandom secureRandom = new SecureRandom();
 
@@ -120,10 +121,12 @@ public class AuthenticationService {
 
         // Token đã thu hồi mà vẫn có người mang tới => nhiều khả năng đã bị đánh
         // cắp và dùng lại. Huỷ toàn bộ phiên của user để chặn kẻ tấn công.
+        //
+        // Việc thu hồi PHẢI chạy trong transaction riêng (REQUIRES_NEW): exception
+        // ném ra ngay sau đây sẽ rollback transaction hiện tại, nếu thu hồi nằm
+        // cùng transaction thì nó bị rollback theo và biện pháp bảo vệ vô tác dụng.
         if (stored.isRevoked()) {
-            refreshTokenRepository.revokeAllByUser(stored.getUser());
-            log.warn("Phát hiện dùng lại refresh token đã thu hồi, thu hồi toàn bộ phiên. username={}",
-                    stored.getUser().getUsername());
+            refreshTokenSecurityService.revokeAllSessions(stored.getUser());
             throw new AppException(ErrorCode.REFRESH_TOKEN_REVOKED);
         }
 
