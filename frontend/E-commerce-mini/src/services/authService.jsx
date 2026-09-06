@@ -35,3 +35,17 @@ export const getUserProfile = async () => {
 
 
 
+
+// Đổi refresh token lấy cặp token mới. Bình thường axiosClient tự gọi khi gặp
+// 401, hàm này để dùng thủ công khi cần.
+export const refreshAccessToken = async (refreshToken) => {
+  const response = await axiosClient.post("/auth/refresh", { refreshToken });
+  return response;
+};
+
+// Đăng xuất: báo backend thu hồi refresh token trong DB. Nếu chỉ xoá
+// localStorage thì token vẫn còn hiệu lực với server cho tới khi hết hạn.
+export const logoutApi = async (refreshToken) => {
+  const response = await axiosClient.post("/auth/logout", { refreshToken });
+  return response;
+};

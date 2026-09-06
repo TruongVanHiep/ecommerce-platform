@@ -50,6 +50,9 @@ spring:
     show-sql: true
 jwt:
   signerKey: ${JWT_SIGNER_KEY}
+  # Access token hạn ngắn vì không thu hồi được; client tự gia hạn bằng refresh token.
+  access-token-minutes: 15
+  refresh-token-days: 7
 
 app:
   oauth2:

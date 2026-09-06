@@ -31,7 +31,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler, 
         OAuth2User principal = (OAuth2User) authentication.getPrincipal();
         var authenticationResponse = authenticationService.authenticateGoogle(principal);
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
-                .fragment("token=" + authenticationResponse.getToken())
+                // Truyền cả refresh token để luồng đăng nhập Google cũng gia hạn được
+                // như đăng nhập thường. Dùng fragment (#) thay vì query (?) vì phần
+                // fragment không được trình duyệt gửi lên server, không lọt vào access log.
+                .fragment("token=" + authenticationResponse.getToken()
+                        + "&refreshToken=" + authenticationResponse.getRefreshToken())
                 .build(true)
                 .toUriString();
         response.sendRedirect(targetUrl);
