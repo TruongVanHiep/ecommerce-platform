@@ -32,6 +32,11 @@ public class SecurityConfig {
 
     @Value("${jwt.signerKey}")
     private String signerKey;
+
+    /** Danh sách origin được phép gọi API, cấu hình qua APP_CORS_ORIGINS. */
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
+
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     // /auth/refresh và /auth/logout phải public: khi client gọi tới thì access token
     // đã hết hạn, chính refresh token mới là thứ dùng để xác thực.
@@ -88,7 +93,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        // Đọc từ biến môi trường APP_CORS_ORIGINS (nhiều origin cách nhau bằng dấu phẩy).
+        // KHÔNG dùng "*" ở đây: đang bật allowCredentials(true), mà chuẩn CORS cấm
+        // kết hợp "*" với credentials — trình duyệt sẽ chặn toàn bộ request.
+        configuration.setAllowedOrigins(allowedOrigins);
 
         configuration.setAllowedMethods(List.of(
                 "GET",

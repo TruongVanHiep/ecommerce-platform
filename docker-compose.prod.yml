@@ -1,0 +1,79 @@
+# Cấu hình cho môi trường production trên VPS.
+#
+# Dùng KÈM với docker-compose.yml (file này chỉ ghi đè phần khác biệt):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Khác biệt chính so với bản dev:
+#   - Có Caddy làm reverse proxy + tự cấp HTTPS (Let's Encrypt)
+#   - KHÔNG mở port của mysql/backend/frontend/prometheus/grafana ra internet;
+#     mọi truy cập đi qua Caddy. Đây là điểm quan trọng nhất về bảo mật: nếu
+#     vẫn mở 3306/8080/3000 thì ai cũng gọi thẳng vào được, bỏ qua HTTPS.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: ecommerce-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      GRAFANA_DOMAIN: ${GRAFANA_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # chứng chỉ HTTPS, PHẢI giữ lại để không xin lại mỗi lần restart
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+
+  mysql:
+    # Không expose ra host: chỉ các container trong cùng mạng Docker truy cập được.
+    ports: []
+
+  backend:
+    ports: []
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      APP_PUBLIC_URL: https://${DOMAIN}
+      APP_CORS_ORIGINS: https://${DOMAIN}
+      # Tin các header X-Forwarded-* do Caddy đặt. BẮT BUỘC khi chạy sau reverse
+      # proxy, vì 2 lý do:
+      #   1. Spring sinh redirect_uri của Google từ URL request. Không có dòng này
+      #      nó sinh ra "http://backend:8080/..." → Google báo redirect_uri_mismatch.
+      #   2. RateLimitFilter khoá theo getRemoteAddr(). Không có dòng này thì mọi
+      #      request đều mang IP của Caddy → cả hệ thống dùng chung 1 bucket.
+      # CHỈ bật ở production: ở đây backend không expose port ra ngoài nên chỉ
+      # Caddy gọi tới được, header không giả mạo được.
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      ADMIN_INIT_PASSWORD: ${ADMIN_INIT_PASSWORD:-}
+
+  frontend:
+    ports: []
+
+  prometheus:
+    ports: []
+
+  tempo:
+    ports: []
+
+  grafana:
+    ports: []
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SERVER_ROOT_URL: https://${GRAFANA_DOMAIN}
+      # Tắt đăng ký và truy cập ẩn danh — đây là dashboard vận hành nội bộ.
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,47 @@
+# Caddy tự động xin và gia hạn chứng chỉ HTTPS từ Let's Encrypt.
+# Chỉ cần domain đã trỏ A record về IP của VPS là xong, không phải cấu hình gì thêm.
+
+{$DOMAIN} {
+    # API đi thẳng tới backend. Đặt TRƯỚC route "/" vì Caddy ưu tiên
+    # đường dẫn cụ thể hơn, nhưng viết rõ ràng cho dễ đọc.
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+
+    # OAuth2 của Google gọi ngược về các đường dẫn này trên backend.
+    handle /oauth2/* {
+        reverse_proxy backend:8080
+    }
+    handle /login/oauth2/* {
+        reverse_proxy backend:8080
+    }
+
+    # Toàn bộ còn lại là giao diện React (nginx phục vụ file tĩnh).
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # Header bảo mật — mục "còn tồn tại" trong SECURITY.md.
+    header {
+        # Buộc trình duyệt luôn dùng HTTPS trong 1 năm
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        # Ẩn thông tin server
+        -Server
+    }
+
+    encode gzip zstd
+}
+
+# Grafana đặt ở subdomain riêng, KHÔNG mở cùng domain chính để tránh
+# lộ dashboard vận hành ra người dùng cuối.
+{$GRAFANA_DOMAIN} {
+    reverse_proxy grafana:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+}
