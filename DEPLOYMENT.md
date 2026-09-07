@@ -9,7 +9,7 @@ Toàn bộ hệ thống chạy bằng Docker Compose, có HTTPS tự động qua
 | RAM | **4 GB** | 8 container: MySQL, backend, frontend, Prometheus, Grafana, Loki, Tempo, Promtail, Caddy |
 | Ổ cứng | 20 GB | MySQL + dữ liệu observability |
 | Hệ điều hành | Ubuntu 22.04+ | Cần cài Docker + Docker Compose plugin |
-| Domain | 1 domain + 1 subdomain | VD `shop.example.com` và `grafana.example.com` |
+| Domain | 1 domain + 1 subdomain | VD `shop.commerce.com` và `grafana.commerce.com` |
 
 > VPS 1 GB RAM (gói ~5$/tháng) **không đủ** chạy cả bộ observability. Nếu chỉ có 1 GB,
 > xem mục "Chạy gọn nhẹ" ở cuối.
@@ -19,11 +19,11 @@ Toàn bộ hệ thống chạy bằng Docker Compose, có HTTPS tự động qua
 Tạo 2 bản ghi **A** trỏ về IP của VPS:
 
 ```
-shop.example.com      A   <IP VPS>
-grafana.example.com   A   <IP VPS>
+shop.commerce.com      A   <IP VPS>
+grafana.commerce.com   A   <IP VPS>
 ```
 
-Chờ DNS lan truyền (thường vài phút). Kiểm tra: `ping shop.example.com` phải ra đúng IP.
+Chờ DNS lan truyền (thường vài phút). Kiểm tra: `ping shop.commerce.com` phải ra đúng IP.
 
 **Phải làm bước này TRƯỚC khi khởi động Caddy** — Let's Encrypt xác minh quyền sở hữu
 domain bằng cách gọi ngược về IP, domain chưa trỏ đúng thì không cấp được chứng chỉ.
@@ -47,8 +47,8 @@ nano .env
 Điền các giá trị sau trong `.env`:
 
 ```bash
-DOMAIN=shop.example.com
-GRAFANA_DOMAIN=grafana.example.com
+DOMAIN=shop.commerce.com
+GRAFANA_DOMAIN=grafana.commerce.com
 
 MYSQL_ROOT_PASSWORD=<mật khẩu mạnh>
 DB_USERNAME=root
@@ -74,7 +74,7 @@ Vào [Google Cloud Console](https://console.cloud.google.com) → **APIs & Servi
 → chọn OAuth client → thêm vào **Authorized redirect URIs**:
 
 ```
-https://shop.example.com/login/oauth2/code/google
+https://shop.commerce.com/login/oauth2/code/google
 ```
 
 Thiếu bước này thì đăng nhập Google báo `redirect_uri_mismatch`.
@@ -91,8 +91,8 @@ Kiểm tra:
 
 ```bash
 docker compose ps                                    # tất cả phải Up/healthy
-curl -I https://shop.example.com                     # phải trả 200 và có HTTPS
-curl https://shop.example.com/api/products | head    # API hoạt động
+curl -I https://shop.commerce.com                     # phải trả 200 và có HTTPS
+curl https://shop.commerce.com/api/products | head    # API hoạt động
 docker logs ecommerce-caddy | grep -i certificate    # xác nhận đã cấp chứng chỉ
 ```
 
@@ -109,11 +109,11 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 | | Local (`docker-compose.yml`) | Production (thêm `docker-compose.prod.yml`) |
 |---|---|---|
-| Truy cập | `http://localhost:5173` | `https://shop.example.com` qua Caddy |
+| Truy cập | `http://localhost:5173` | `https://shop.commerce.com` qua Caddy |
 | HTTPS | Không | Có, tự động gia hạn |
 | Port mở ra ngoài | 3307, 8080, 5173, 9090, 3000, 3200 | **Chỉ 80 và 443** |
-| Grafana | `localhost:3000` | `https://grafana.example.com`, tắt đăng ký |
-| CORS | `http://localhost:5173` | `https://shop.example.com` |
+| Grafana | `localhost:3000` | `https://grafana.commerce.com`, tắt đăng ký |
+| CORS | `http://localhost:5173` | `https://shop.commerce.com` |
 | Header bảo mật | Không | HSTS, X-Frame-Options, Referrer-Policy... |
 
 **Vì sao production đóng hết port nội bộ**: nếu vẫn mở 8080/3306/3000 ra internet thì
