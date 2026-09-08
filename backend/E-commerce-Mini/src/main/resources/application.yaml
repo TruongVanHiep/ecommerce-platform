@@ -55,8 +55,12 @@ jwt:
   refresh-token-days: 7
 
 app:
+  cors:
+    # Nhiều origin cách nhau bằng dấu phẩy. Mặc định cho môi trường dev local.
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
   oauth2:
-    redirect-uri: http://localhost:5173/oauth2/redirect
+    # Domain thật khi deploy, đổi qua biến môi trường APP_PUBLIC_URL.
+    redirect-uri: ${APP_PUBLIC_URL:http://localhost:5173}/oauth2/redirect
   admin:
     # Bỏ trống => KHÔNG seed tài khoản admin (tránh tài khoản mặc định admin/admin).
     init-password: ${ADMIN_INIT_PASSWORD:}

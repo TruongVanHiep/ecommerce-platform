@@ -41,9 +41,15 @@ import java.util.concurrent.TimeUnit;
  * Nếu sau này chạy nhiều instance backend thì phải chuyển sang store dùng chung
  * (Redis), vì mỗi instance hiện đếm riêng.
  *
- * Khoá bucket dùng {@code request.getRemoteAddr()} chứ KHÔNG đọc header
- * X-Forwarded-For: hiện không có reverse proxy tin cậy nào đứng trước backend
- * nên header đó giả mạo được, kẻ tấn công chỉ cần đổi header là thoát giới hạn.
+ * Khoá bucket dùng {@code request.getRemoteAddr()} chứ KHÔNG tự đọc header
+ * X-Forwarded-For: chạy local thì không có proxy tin cậy nào phía trước, đọc
+ * header đó thì kẻ tấn công chỉ cần đổi header là thoát giới hạn.
+ *
+ * Khi deploy sau Caddy, docker-compose.prod.yml bật
+ * {@code SERVER_FORWARD_HEADERS_STRATEGY=framework} để Spring tự xử lý các
+ * header X-Forwarded-* — lúc đó getRemoteAddr() trả về IP thật của client thay
+ * vì IP của Caddy. An toàn vì ở production backend không mở port ra ngoài,
+ * chỉ Caddy gọi tới được nên header không giả mạo được.
  */
 @Slf4j
 @Component
