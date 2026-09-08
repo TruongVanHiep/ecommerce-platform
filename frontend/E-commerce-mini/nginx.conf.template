@@ -1,3 +1,17 @@
+# Giữ nguyên X-Forwarded-Proto do lớp proxy phía trước đặt; chỉ khi không có
+# thì mới dùng $scheme của chính nginx.
+#
+# Vì sao cần: trên PaaS, TLS kết thúc ở ingress của nền tảng rồi chuyển HTTP
+# xuống container này, nên $scheme ở đây luôn là "http". Nếu đè cứng
+# `X-Forwarded-Proto $scheme` thì Spring dựng redirect_uri của Google thành
+# "http://domain/..." trong khi Google đã đăng ký "https://domain/..."
+# -> redirect_uri_mismatch. Chạy local không có header này nên rơi về $scheme,
+# hành vi y như cũ.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
 server {
     listen 80;
     server_name _;
@@ -7,21 +21,44 @@ server {
     # Chặn payload quá lớn ngay tại lớp proxy, trước khi chạm tới backend.
     client_max_body_size 256k;
 
+    # Khai báo ở cấp server để mọi location proxy bên dưới cùng kế thừa,
+    # khỏi lặp lại và khỏi quên ở một location nào đó.
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+
+    # BACKEND_URL do entrypoint của image nginx thay vào lúc container khởi
+    # động (xem Dockerfile). Mặc định là "http://backend:8080" — tên service
+    # trong docker-compose.yml. Khi deploy lên PaaS (Northflank...) thì set
+    # biến này thành địa chỉ nội bộ mà nền tảng cấp cho service backend.
+    #
+    # Lưu ý vận hành: nginx phân giải DNS của upstream ngay lúc KHỞI ĐỘNG.
+    # Nếu backend chưa chạy/chưa có DNS thì nginx thoát với lỗi
+    # "host not found in upstream" và container lặp restart. Trên PaaS phải
+    # deploy backend trước, hoặc để nền tảng tự retry.
     location /api/ {
-        # BACKEND_URL do entrypoint của image nginx thay vào lúc container khởi
-        # động (xem Dockerfile). Mặc định là "http://backend:8080" — tên service
-        # trong docker-compose.yml. Khi deploy lên PaaS (Northflank...) thì set
-        # biến này thành địa chỉ nội bộ mà nền tảng cấp cho service backend.
-        #
-        # Lưu ý vận hành: nginx phân giải DNS của upstream ngay lúc KHỞI ĐỘNG.
-        # Nếu backend chưa chạy/chưa có DNS thì nginx thoát với lỗi
-        # "host not found in upstream" và container lặp restart. Trên PaaS phải
-        # deploy backend trước, hoặc để nền tảng tự retry.
         proxy_pass ${BACKEND_URL}/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Hai block dưới đây BẮT BUỘC cho đăng nhập Google, và chỉ cần khi nginx
+    # là cổng public duy nhất (trường hợp deploy lên PaaS).
+    #
+    #   /oauth2/authorization/google  -> Spring bắt đầu luồng OAuth
+    #   /login/oauth2/code/google     -> Google gọi ngược lại sau khi user đồng ý
+    #
+    # Thiếu chúng thì request rơi xuống "location /" và bị try_files trả về
+    # index.html: trình duyệt nhận HTML thay vì redirect, SPA load lại như
+    # chưa có gì xảy ra — hỏng mà không có thông báo lỗi nào.
+    #
+    # Trên VPS thì Caddy đã route sẵn (xem deploy/Caddyfile), nginx không thấy
+    # các đường này. Để ở đây vẫn vô hại vì đằng nào cũng trỏ về backend.
+    location /oauth2/ {
+        proxy_pass ${BACKEND_URL}/oauth2/;
+    }
+
+    location /login/oauth2/ {
+        proxy_pass ${BACKEND_URL}/login/oauth2/;
     }
 
     location / {
