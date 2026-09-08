@@ -13,7 +13,10 @@ export default function LoginPage() {
   const { login: contextLogin } = useContext(AuthContext);
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+    // Đường dẫn tương đối, KHÔNG hardcode host: nginx proxy đường này sang
+    // backend (xem nginx.conf.template). Nhờ vậy chạy đúng ở cả local lẫn khi
+    // deploy, nơi backend không có địa chỉ public để trỏ tới.
+    window.location.href = "/oauth2/authorization/google";
   };
 
   const handleLogin = async (e) => {

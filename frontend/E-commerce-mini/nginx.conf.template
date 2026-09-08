@@ -23,7 +23,12 @@ server {
 
     # Khai báo ở cấp server để mọi location proxy bên dưới cùng kế thừa,
     # khỏi lặp lại và khỏi quên ở một location nào đó.
-    proxy_set_header Host $host;
+    # $http_host chứ không phải $host: $host CẮT MẤT PORT. Spring dựng
+    # redirect_uri của Google từ header Host, dùng $host thì ở local ra
+    # "http://localhost/login/oauth2/code/google" (thiếu :5173) và Google báo
+    # redirect_uri_mismatch. Với domain thật chạy cổng 443 thì hai biến cho
+    # kết quả như nhau.
+    proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
