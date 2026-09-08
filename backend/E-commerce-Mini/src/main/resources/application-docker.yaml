@@ -1,6 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://mysql:3306/e_commerce_mini?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # "mysql" là tên service trong docker-compose.yml. Ghi đè bằng DB_URL khi
+    # chạy ở nơi khác (nền tảng PaaS có MySQL quản lý sẵn).
+    url: ${DB_URL:jdbc:mysql://mysql:3306/e_commerce_mini?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
   jpa:
     # Không in câu SQL ra log khi chạy container — log được ship sang Loki,
     # SQL chứa dữ liệu người dùng và làm nhiễu log.
@@ -16,4 +18,6 @@ logging:
 management:
   otlp:
     tracing:
-      endpoint: http://tempo:4318/v1/traces
+      # "tempo" là service trong docker-compose.yml. Nơi nào không có Tempo thì
+      # đặt TRACING_SAMPLE_RATE=0 để tắt hẳn việc gửi trace.
+      endpoint: ${OTLP_ENDPOINT:http://tempo:4318/v1/traces}

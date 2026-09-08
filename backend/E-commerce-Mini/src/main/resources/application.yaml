@@ -28,7 +28,9 @@ spring:
 
 
   datasource:
-    url: jdbc:mysql://localhost:3306/e_commerce_mini?useSSL=false&serverTimezone=UTC
+    # Mặc định là MySQL chạy trên máy (dev). Khi deploy lên nền tảng có DB
+    # quản lý sẵn (Northflank, RDS...) thì ghi đè trọn chuỗi bằng DB_URL.
+    url: ${DB_URL:jdbc:mysql://localhost:3306/e_commerce_mini?useSSL=false&serverTimezone=UTC}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD}
 
@@ -97,8 +99,12 @@ management:
         http.server.requests: true
   tracing:
     sampling:
-      probability: 1.0
+      # Lấy mẫu 100% vì đây là môi trường dev/demo, lượng request nhỏ.
+      # Khi deploy lên nền tảng KHÔNG có Tempo thì đặt TRACING_SAMPLE_RATE=0,
+      # nếu không backend sẽ liên tục cố gửi trace tới địa chỉ không tồn tại
+      # và ghi đầy log lỗi export.
+      probability: ${TRACING_SAMPLE_RATE:1.0}
   otlp:
     tracing:
-      endpoint: http://localhost:4318/v1/traces
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 
