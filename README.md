@@ -67,6 +67,7 @@ Browser → frontend (nginx :5173) ──/api──► backend (Spring Boot :808
 | Frontend | React 19, Vite 8, Tailwind CSS 4, React Router 7, Axios |
 | Observability | Micrometer, Prometheus, Loki + Promtail, Tempo (OpenTelemetry OTLP), Grafana |
 | Rate limiting | Bucket4j + Caffeine |
+| Kiểm thử | JUnit 5, Mockito, Testcontainers |
 | Hạ tầng | Docker Compose, Caddy (HTTPS tự động) |
 
 ## Điểm kỹ thuật đáng chú ý
@@ -125,17 +126,22 @@ cả được provision tự động khi Grafana khởi động.
 
 ## Kiểm thử
 
-12 unit test (JUnit 5 + Mockito) tập trung vào phần dễ sai nhất: rate limiting
-(4) và vòng đời refresh token (8) — xoay vòng, phát hiện tái sử dụng, thu hồi.
-
 ```bash
 cd backend/E-commerce-Mini && ./mvnw test
 ```
 
-Test thứ 13, `ECommerceMiniApplicationTests.contextLoads`, là test sinh sẵn khi
-tạo project. Nó nạp toàn bộ Spring context nên cần một MySQL đang chạy ở
-`localhost:3306`; không có thì lệnh trên báo lỗi. 12 test kia không phụ thuộc
-môi trường. Xem mục [Hạn chế đã biết](#hạn-chế-đã-biết).
+13 test, chạy được ở mọi máy có Docker:
+
+- **12 unit test** (JUnit 5 + Mockito) — rate limiting (4) và vòng đời refresh
+  token (8): xoay vòng, phát hiện tái sử dụng, thu hồi toàn bộ phiên.
+- **1 integration test** — nạp toàn bộ Spring context trên một MySQL thật do
+  **Testcontainers** dựng trong Docker, chạy xong tự xoá. Nó bắt được lớp lỗi
+  mà mock không thấy: bean cấu hình sai, schema Hibernate không dựng được,
+  placeholder thiếu giá trị.
+
+Trước đây test integration này kết nối thẳng `localhost:3306` nên kết quả phụ
+thuộc máy chạy — máy không có MySQL thì "connection refused", máy có MariaDB ở
+cổng đó thì lỗi plugin xác thực. Testcontainers loại bỏ hẳn sự phụ thuộc đó.
 
 ## Cấu trúc thư mục
 
@@ -172,6 +178,5 @@ Ghi ra đây để minh bạch, không phải để bỏ qua:
 - Promtail cần quyền đọc Docker socket nên không chạy được trên PaaS; ở đó
   observability dùng công cụ sẵn có của nền tảng.
 - `/actuator` đang để public cho Prometheus scrape và Docker healthcheck.
-- `./mvnw test` hiện **không xanh trên máy sạch**: `contextLoads` cần MySQL thật
-  ở `localhost:3306`. Cách sửa đúng là dùng Testcontainers để test tự dựng
-  database, hoặc bỏ hẳn test này vì nó không kiểm tra hành vi nào cụ thể.
+- Độ phủ test còn mỏng: mới tập trung vào xác thực và rate limiting, chưa có
+  test cho luồng đặt hàng, giỏ hàng và voucher.
