@@ -1,0 +1,30 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Chặn payload quá lớn ngay tại lớp proxy, trước khi chạm tới backend.
+    client_max_body_size 256k;
+
+    location /api/ {
+        # BACKEND_URL do entrypoint của image nginx thay vào lúc container khởi
+        # động (xem Dockerfile). Mặc định là "http://backend:8080" — tên service
+        # trong docker-compose.yml. Khi deploy lên PaaS (Northflank...) thì set
+        # biến này thành địa chỉ nội bộ mà nền tảng cấp cho service backend.
+        #
+        # Lưu ý vận hành: nginx phân giải DNS của upstream ngay lúc KHỞI ĐỘNG.
+        # Nếu backend chưa chạy/chưa có DNS thì nginx thoát với lỗi
+        # "host not found in upstream" và container lặp restart. Trên PaaS phải
+        # deploy backend trước, hoặc để nền tảng tự retry.
+        proxy_pass ${BACKEND_URL}/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
