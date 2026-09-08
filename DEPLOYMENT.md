@@ -2,6 +2,10 @@
 
 Toàn bộ hệ thống chạy bằng Docker Compose, có HTTPS tự động qua Caddy.
 
+> Deploy lên nền tảng quản lý sẵn (Northflank, Railway, Render...) thì đọc
+> [DEPLOY_NORTHFLANK.md](DEPLOY_NORTHFLANK.md). Ở đó chỉ chạy 3 service và
+> không dùng Caddy — nền tảng tự lo HTTPS.
+
 ## 1. Yêu cầu
 
 | Hạng mục | Tối thiểu | Ghi chú |
