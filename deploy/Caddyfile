@@ -8,8 +8,15 @@
         reverse_proxy backend:8080
     }
 
-    # OAuth2 của Google gọi ngược về các đường dẫn này trên backend.
-    handle /oauth2/* {
+    # OAuth2: chỉ 2 đường dẫn này thuộc về backend.
+    #   /oauth2/authorization/google  -> Spring bắt đầu luồng đăng nhập
+    #   /login/oauth2/code/google     -> Google gọi ngược lại sau khi user đồng ý
+    #
+    # KHÔNG dùng "/oauth2/*" ở đây: frontend có route riêng "/oauth2/redirect"
+    # (trang React nhận token rồi lưu lại). Bắt cả "/oauth2/*" thì đường đó bị
+    # đẩy sang backend, backend không có nên trả 500 và đăng nhập Google hỏng
+    # ngay ở bước cuối.
+    handle /oauth2/authorization/* {
         reverse_proxy backend:8080
     }
     handle /login/oauth2/* {
