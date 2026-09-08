@@ -51,10 +51,13 @@ server {
     # index.html: trình duyệt nhận HTML thay vì redirect, SPA load lại như
     # chưa có gì xảy ra — hỏng mà không có thông báo lỗi nào.
     #
-    # Trên VPS thì Caddy đã route sẵn (xem deploy/Caddyfile), nginx không thấy
-    # các đường này. Để ở đây vẫn vô hại vì đằng nào cũng trỏ về backend.
-    location /oauth2/ {
-        proxy_pass ${BACKEND_URL}/oauth2/;
+    # PHẢI ghi đủ "/oauth2/authorization/", KHÔNG được rút gọn thành "/oauth2/":
+    # frontend có route riêng "/oauth2/redirect" (App.jsx) là trang React nhận
+    # token sau khi đăng nhập xong. Bắt cả "/oauth2/" thì đường đó bị đẩy sang
+    # backend, backend không có route nên trả 500 JSON thay vì trang SPA —
+    # đăng nhập Google hỏng đúng ở bước cuối cùng.
+    location /oauth2/authorization/ {
+        proxy_pass ${BACKEND_URL}/oauth2/authorization/;
     }
 
     location /login/oauth2/ {
