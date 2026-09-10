@@ -57,6 +57,17 @@ jwt:
   refresh-token-days: 7
 
 app:
+  mail:
+    # smtp  — gửi qua Gmail bằng app password. Đủ cho môi trường phát triển,
+    #         nhưng thư gần như luôn rơi vào thư rác của người nhận vì địa chỉ
+    #         @gmail.com không có SPF/DKIM cho tên miền nào cả.
+    # resend — gửi qua API HTTPS từ tên miền riêng. Dùng ở production.
+    provider: ${MAIL_PROVIDER:smtp}
+    resend-api-key: ${RESEND_API_KEY:}
+    # Bỏ trống khi dùng smtp => lấy chính spring.mail.username.
+    # Với resend thì BẮT BUỘC, và phải thuộc tên miền đã xác minh ở Resend.
+    from-address: ${MAIL_FROM_ADDRESS:}
+    from-name: ${MAIL_FROM_NAME:MiniCommerce}
   cors:
     # Nhiều origin cách nhau bằng dấu phẩy. Mặc định cho môi trường dev local.
     allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
