@@ -34,6 +34,13 @@ public class UserService {
         if (userRepository.existsUserByUsername(request.getUsername())){
             throw new AppException(ErrorCode.USER_EXISTED);
         }
+        // Kiểm tra ở đây thay vì để unique index của DB chặn: vi phạm ở tầng DB
+        // bị gom thành thông báo chung "Dữ liệu gửi lên không hợp lệ", người dùng
+        // không biết trường nào sai. Vẫn giữ unique index làm lớp chặn cuối cho
+        // trường hợp hai request đăng ký cùng email chạy song song.
+        if (userRepository.existsUserByEmail(request.getEmail())){
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
         Role userRole = roleRepository.findById("USER")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
         User user = userMapper.toUser(request);

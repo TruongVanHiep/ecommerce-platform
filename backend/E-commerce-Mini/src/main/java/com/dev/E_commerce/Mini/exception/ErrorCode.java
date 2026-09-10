@@ -8,7 +8,12 @@ public enum ErrorCode {
     USER_UNCATEGORIZED(9999,"Uncategorized ERROR",HttpStatus.INTERNAL_SERVER_ERROR),
     USER_NOT_EXISTED(1001, "User not existed", HttpStatus.NOT_FOUND),
     ROLE_NOT_EXISTED(1023, "Role not existed", HttpStatus.BAD_REQUEST),
-    USER_EXISTED(1022, "User existed", HttpStatus.BAD_REQUEST),
+    USER_EXISTED(1022, "Tên đăng nhập đã được sử dụng", HttpStatus.BAD_REQUEST),
+    // Cột users.email có unique index. Không kiểm tra ở tầng service thì vi phạm
+    // rơi xuống DB, bị handler DataIntegrityViolationException gom thành
+    // INVALID_INPUT ("Dữ liệu gửi lên không hợp lệ") — người dùng không biết
+    // trường nào sai nên sửa lung tung rồi bỏ cuộc.
+    EMAIL_EXISTED(1074, "Email đã được sử dụng", HttpStatus.BAD_REQUEST),
     INVALID_TOKEN(1002,"Invalid token", HttpStatus.UNAUTHORIZED),
     UNAUTHENTICATED(1017,"Unauthorized !", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1018,"You don't have permission !", HttpStatus.FORBIDDEN),

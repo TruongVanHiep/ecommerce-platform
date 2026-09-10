@@ -23,8 +23,18 @@ class RateLimitFilterTest {
         // @Value không được xử lý khi khởi tạo thủ công nên gán tay cho giống cấu hình thật.
         ReflectionTestUtils.setField(filter, "strictCapacity", 5);
         ReflectionTestUtils.setField(filter, "strictWindowMinutes", 15);
+        ReflectionTestUtils.setField(filter, "registerCapacity", 20);
+        ReflectionTestUtils.setField(filter, "registerWindowMinutes", 15);
         ReflectionTestUtils.setField(filter, "writeCapacity", 60);
         ReflectionTestUtils.setField(filter, "globalCapacity", 200);
+    }
+
+    private MockHttpServletResponse callRegister(String ip) throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/users");
+        request.setRemoteAddr(ip);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, mock(FilterChain.class));
+        return response;
     }
 
     private MockHttpServletResponse callLogin(String ip) throws Exception {
@@ -82,5 +92,32 @@ class RateLimitFilterTest {
             filter.doFilter(request, new MockHttpServletResponse(), chain);
         }
         verify(chain, times(6)).doFilter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void dangKy_choPhepDung20LanRoiChan_lanThu21() throws Exception {
+        for (int i = 1; i <= 20; i++) {
+            assertThat(callRegister("10.0.0.6").getStatus())
+                    .as("lần đăng ký thứ %d phải được cho qua", i)
+                    .isEqualTo(200);
+        }
+        assertThat(callRegister("10.0.0.6").getStatus()).isEqualTo(429);
+    }
+
+    /**
+     * Đây là lý do tồn tại của tầng REGISTER. Trước đây đăng ký và đăng nhập
+     * dùng chung hạn mức 5 lần/15 phút, nên chỉ cần gõ sai mật khẩu 5 lần là
+     * không đăng ký được nữa — và ngược lại. Hai luồng phải đếm riêng.
+     */
+    @Test
+    void dangNhapVaDangKy_demRieng_khongChanLanNhau() throws Exception {
+        // Dùng hết hạn mức đăng nhập của IP này.
+        for (int i = 1; i <= 5; i++) {
+            callLogin("10.0.0.7");
+        }
+        assertThat(callLogin("10.0.0.7").getStatus()).isEqualTo(429);
+
+        // Đăng ký từ cùng IP đó vẫn phải đi được.
+        assertThat(callRegister("10.0.0.7").getStatus()).isEqualTo(200);
     }
 }

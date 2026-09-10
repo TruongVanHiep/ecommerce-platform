@@ -67,13 +67,22 @@ app:
     # Bỏ trống => KHÔNG seed tài khoản admin (tránh tài khoản mặc định admin/admin).
     init-password: ${ADMIN_INIT_PASSWORD:}
   rate-limit:
-    # Giới hạn nghiêm ngặt cho các route xác thực (login, đăng ký, áp voucher)
-    strict-capacity: 5
-    strict-window-minutes: 15
+    # Tất cả đều đọc được từ biến môi trường: khi deploy thấy mức nào quá chặt
+    # hoặc quá lỏng thì chỉnh trên nền tảng rồi restart, không phải sửa code và
+    # chờ build lại.
+    #
+    # Giới hạn nghiêm ngặt cho đăng nhập và áp voucher — mỗi lần thử sai đều
+    # giúp kẻ tấn công tiến gần hơn tới mục tiêu.
+    strict-capacity: ${RATE_LIMIT_STRICT_CAPACITY:5}
+    strict-window-minutes: ${RATE_LIMIT_STRICT_WINDOW_MINUTES:15}
+    # Đăng ký tài khoản — rộng hơn vì đăng ký hỏng không tiết lộ gì, mà người
+    # dùng thật rất hay phải thử lại (trùng tên, trùng email, sai định dạng).
+    register-capacity: ${RATE_LIMIT_REGISTER_CAPACITY:20}
+    register-window-minutes: ${RATE_LIMIT_REGISTER_WINDOW_MINUTES:15}
     # Giới hạn cho các request ghi dữ liệu (POST/PUT/DELETE) còn lại
-    write-capacity: 60
+    write-capacity: ${RATE_LIMIT_WRITE_CAPACITY:60}
     # Giới hạn chung cho mọi request khác
-    global-capacity: 200
+    global-capacity: ${RATE_LIMIT_GLOBAL_CAPACITY:200}
 
 logging:
   level:
