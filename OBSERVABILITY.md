@@ -41,6 +41,28 @@ Cần Docker Desktop đang chạy. Lần đầu build backend/frontend sẽ mấ
 | Grafana | http://localhost:3000 | user `admin`, password theo `GRAFANA_ADMIN_PASSWORD` trong `.env` (mặc định `admin`) |
 | Tempo | http://localhost:3200 | Query API, thường dùng qua Grafana Explore |
 
+## Tra log trong Grafana Explore
+
+Vào **Explore** → chọn datasource **Loki** → chuyển sang chế độ **Code** rồi dán:
+
+```logql
+{service="backend"}                          # toàn bộ log backend
+{service="backend", level="WARN"}            # chỉ cảnh báo
+{service="backend"} | json | traceId != ""   # chỉ log phát sinh từ request thật
+```
+
+`level` là **nhãn**, do Promtail tách ra từ trường JSON (`pipeline_stages` trong
+`observability/promtail/promtail-config.yml`). Lọc bằng nhãn nhanh hơn nhiều so
+với `| json | level = "..."` vì Loki loại bỏ cả stream trước khi đọc nội dung.
+
+Thiếu bước tách đó thì Loki không biết mức log là gì, Grafana phải tự đoán từ
+nội dung dòng — và đoán sai thành DEBUG cho mọi dòng, khiến lọc theo mức log
+vô tác dụng và WARN/ERROR bị lẫn vào đám còn lại.
+
+**Nhảy từ log sang trace**: bấm một dòng log → tìm trường `TraceID` → bấm nút
+bên cạnh. Grafana chia đôi màn hình, bên phải là trace tương ứng trong Tempo với
+đầy đủ span. Liên kết này do `derivedFields` trong cấu hình datasource tạo ra.
+
 ## Dashboards có sẵn (Grafana → Dashboards → E-commerce Mini)
 
 - **Application Overview**: HTTP request rate, tỉ lệ lỗi 5xx, uptime backend, latency p50/p95/p99, JVM heap, connection pool (HikariCP), GC pause rate.

@@ -20,3 +20,23 @@ scrape_configs:
       - source_labels: [container]
         regex: "ecommerce-(.*)"
         target_label: service
+
+    # Tách mức log ra thành nhãn riêng.
+    #
+    # Thiếu phần này thì Loki không biết mức log là gì, Grafana phải tự đoán từ
+    # nội dung dòng và đoán sai — mọi dòng đều hiện DEBUG kể cả khi backend chỉ
+    # sinh INFO và WARN. Hậu quả: lọc theo mức log không hoạt động, và người
+    # dùng Grafana để tìm lỗi sẽ bỏ sót cả WARN lẫn ERROR.
+    #
+    # Chỉ tách `level`, KHÔNG tách traceId: traceId gần như không trùng nhau nên
+    # đưa lên nhãn sẽ tạo ra hàng triệu stream và làm Loki sập. Nó vẫn nằm trong
+    # nội dung dòng, và Grafana đã có derivedFields bắt nó để nhảy sang Tempo
+    # (xem observability/grafana/provisioning/datasources/datasources.yml).
+    pipeline_stages:
+      # Container không phải backend (mysql, grafana, promtail...) không ghi log
+      # JSON. json stage gặp dòng không phải JSON sẽ bỏ qua, không làm hỏng gì.
+      - json:
+          expressions:
+            level: level
+      - labels:
+          level:
