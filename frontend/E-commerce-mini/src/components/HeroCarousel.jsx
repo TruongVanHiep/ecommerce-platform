@@ -12,7 +12,10 @@ const AUTOPLAY_MS = 5000;
  */
 export default function HeroCarousel({ products = [], count = 5 }) {
     const [index, setIndex] = useState(0);
+    // paused: tạm dừng do rê chuột/focus vào. playing: người dùng chủ động bật
+    // tắt bằng nút. Tách riêng để rê chuột không làm mất lựa chọn của họ.
     const [paused, setPaused] = useState(false);
+    const [playing, setPlaying] = useState(true);
     // Ảnh sản phẩm trỏ tới website bên thứ ba, một số chặn hotlink (trả về
     // ERR_BLOCKED_BY_RESPONSE) nên không tải được. Ảnh hỏng mà vẫn giữ slide
     // thì người dùng thấy một khung trống và tưởng trang lỗi — loại nó ra.
@@ -23,8 +26,14 @@ export default function HeroCarousel({ products = [], count = 5 }) {
         .filter((p) => !failedIds.has(p.id))
         .slice(0, count);
 
-    // Người dùng bật "giảm chuyển động" trong hệ điều hành thì không tự chạy —
-    // ảnh nhấp nháy liên tục gây khó chịu, với một số người là chóng mặt thật sự.
+    // Người dùng bật "giảm chuyển động" trong hệ điều hành (Windows:
+    // Accessibility > Visual effects > Animation effects).
+    //
+    // Trước đây gặp cờ này thì tắt luôn tự chạy. Nhưng nhiều máy bật sẵn mặc
+    // định, khiến carousel đứng im và trông như hỏng. Giờ vẫn tự chuyển, chỉ bỏ
+    // hiệu ứng mờ dần — thứ mà thiết lập này nhắm tới là CHUYỂN ĐỘNG, không
+    // phải việc nội dung thay đổi. Ai thực sự muốn nó đứng yên thì bấm nút tạm
+    // dừng bên dưới.
     const reducedMotion = useRef(
         typeof window !== "undefined" &&
         window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
@@ -45,10 +54,10 @@ export default function HeroCarousel({ products = [], count = 5 }) {
     }, [slides.length, index]);
 
     useEffect(() => {
-        if (paused || reducedMotion || slides.length < 2) return;
+        if (paused || !playing || slides.length < 2) return;
         const timer = setInterval(() => setIndex((i) => (i + 1) % slides.length), AUTOPLAY_MS);
         return () => clearInterval(timer);
-    }, [paused, reducedMotion, slides.length]);
+    }, [paused, playing, slides.length]);
 
     if (slides.length === 0) {
         return (
@@ -81,9 +90,9 @@ export default function HeroCarousel({ products = [], count = 5 }) {
                         onClick={() => navigate(`/products/${p.id}`)}
                         // Tất cả slide luôn nằm trong DOM và chỉ đổi opacity: ảnh
                         // được tải sẵn nên chuyển slide không bị chớp trắng.
-                        className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-out ${
-                            i === index ? "opacity-100" : "opacity-0 pointer-events-none"
-                        }`}
+                        className={`absolute inset-0 w-full h-full ${
+                            reducedMotion ? "" : "transition-opacity duration-700 ease-out"
+                        } ${i === index ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                         aria-hidden={i !== index}
                         tabIndex={i === index ? 0 : -1}
                         aria-label={`Xem chi tiết ${p.name}`}
@@ -137,20 +146,34 @@ export default function HeroCarousel({ products = [], count = 5 }) {
             </div>
 
             {slides.length > 1 && (
-                <div className="flex justify-center gap-2 pt-3" role="tablist" aria-label="Chọn ảnh">
-                    {slides.map((p, i) => (
-                        <button
-                            key={p.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={i === index}
-                            aria-label={`Ảnh ${i + 1} trên ${slides.length}`}
-                            onClick={() => go(i)}
-                            className={`h-1.5 rounded-full transition-all ${
-                                i === index ? "w-6 bg-accent" : "w-1.5 bg-white/25 hover:bg-white/40"
-                            }`}
-                        />
-                    ))}
+                <div className="flex justify-center items-center gap-2 pt-3">
+                    <div className="flex gap-2" role="tablist" aria-label="Chọn ảnh">
+                        {slides.map((p, i) => (
+                            <button
+                                key={p.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={i === index}
+                                aria-label={`Ảnh ${i + 1} trên ${slides.length}`}
+                                onClick={() => go(i)}
+                                className={`h-1.5 rounded-full transition-all ${
+                                    i === index ? "w-6 bg-accent" : "w-1.5 bg-white/25 hover:bg-white/40"
+                                }`}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Bắt buộc phải có khi nội dung tự chuyển: người dùng cần
+                        cách dừng lại để kịp đọc, và đây là lối thoát cho ai bật
+                        "giảm chuyển động" mà vẫn thấy phiền. */}
+                    <button
+                        type="button"
+                        onClick={() => setPlaying((v) => !v)}
+                        aria-label={playing ? "Tạm dừng tự chuyển ảnh" : "Tự chuyển ảnh"}
+                        className="ml-2 w-5 h-5 rounded-full text-white/40 hover:text-white/80 text-[10px] leading-none flex items-center justify-center transition-colors"
+                    >
+                        {playing ? "❚❚" : "▶"}
+                    </button>
                 </div>
             )}
         </div>
