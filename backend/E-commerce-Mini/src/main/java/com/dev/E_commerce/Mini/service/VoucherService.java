@@ -2,6 +2,7 @@ package com.dev.E_commerce.Mini.service;
 
 import com.dev.E_commerce.Mini.dto.request.ApplyVoucherRequest;
 import com.dev.E_commerce.Mini.dto.request.VoucherRequest;
+import com.dev.E_commerce.Mini.dto.response.AvailableVoucherResponse;
 import com.dev.E_commerce.Mini.dto.response.VoucherPreviewResponse;
 import com.dev.E_commerce.Mini.dto.response.VoucherResponse;
 import com.dev.E_commerce.Mini.entity.Order;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -72,6 +74,56 @@ public class VoucherService {
                 .code(voucher.getCode())
                 .discountAmount(discount)
                 .finalTotal(request.getOrderTotal().subtract(discount))
+                .build();
+    }
+
+    /**
+     * Danh sách voucher hiện cho người dùng chọn trong giỏ hàng, đã tính sẵn
+     * theo giá trị giỏ hàng hiện tại.
+     *
+     * <p>Trước đây người dùng phải TỰ BIẾT mã rồi gõ tay — không có chỗ nào
+     * hiển thị mã đang có, nên tính năng voucher gần như vô dụng với người dùng
+     * thật. Endpoint này là thứ khiến nó dùng được.
+     *
+     * <p>Voucher chưa đạt giá trị tối thiểu vẫn được trả về (eligible = false)
+     * kèm amountNeeded, để giao diện gợi ý mua thêm thay vì giấu ưu đãi đi.
+     */
+    @Transactional(readOnly = true)
+    public List<AvailableVoucherResponse> getAvailableVouchers(BigDecimal orderTotal, User user) {
+        BigDecimal total = orderTotal == null ? BigDecimal.ZERO : orderTotal;
+
+        return voucherRepository.findRedeemable(LocalDateTime.now()).stream()
+                // Mỗi người chỉ dùng được một voucher một lần (bảng voucher_usages
+                // có unique voucher_id + user_id). Đã dùng rồi thì hiện ra chỉ gây
+                // bực bội vì bấm vào sẽ báo lỗi.
+                .filter(v -> user == null
+                        || !voucherUsageRepository.existsByVoucher_IdAndUser_Id(v.getId(), user.getId()))
+                .map(v -> toAvailableResponse(v, total))
+                // Dùng được xếp trước, trong đó mã giảm nhiều nhất lên đầu. Nhóm
+                // chưa đủ điều kiện xếp sau, ưu tiên mã cần mua thêm ít nhất.
+                .sorted(Comparator
+                        .comparing(AvailableVoucherResponse::isEligible).reversed()
+                        .thenComparing(r -> r.isEligible()
+                                ? r.getEstimatedDiscount().negate()
+                                : r.getAmountNeeded()))
+                .toList();
+    }
+
+    private AvailableVoucherResponse toAvailableResponse(Voucher voucher, BigDecimal orderTotal) {
+        boolean eligible = orderTotal.compareTo(voucher.getMinOrderValue()) >= 0;
+
+        return AvailableVoucherResponse.builder()
+                .id(voucher.getId())
+                .code(voucher.getCode())
+                .description(voucher.getDescription())
+                .discountType(voucher.getDiscountType())
+                .discountValue(voucher.getDiscountValue())
+                .minOrderValue(voucher.getMinOrderValue())
+                .maxDiscountAmount(voucher.getMaxDiscountAmount())
+                .endDate(voucher.getEndDate())
+                .eligible(eligible)
+                .estimatedDiscount(eligible ? calculateDiscount(voucher, orderTotal) : BigDecimal.ZERO)
+                .amountNeeded(eligible ? BigDecimal.ZERO : voucher.getMinOrderValue().subtract(orderTotal))
                 .build();
     }
 

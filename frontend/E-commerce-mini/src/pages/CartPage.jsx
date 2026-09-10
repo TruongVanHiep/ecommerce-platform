@@ -4,6 +4,7 @@ import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { formatVND } from "../lib/formatCurrency";
 import { applyVoucher } from "../services/voucherService";
+import VoucherPicker from "../components/VoucherPicker";
 import { createOrder } from "../services/orderService";
 import { createPayment } from "../services/paymentService";
 
@@ -16,8 +17,8 @@ export default function CartPage() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Voucher state
-  const [couponCode, setCouponCode] = useState("");
+  // Voucher state — không còn ô nhập mã thủ công, người dùng bấm chọn từ
+  // danh sách voucher đang có (VoucherPicker).
   const [appliedVoucher, setAppliedVoucher] = useState(null); // { code, discountAmount }
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
@@ -42,21 +43,20 @@ export default function CartPage() {
   const shippingFee = cartTotal > 0 && !isFreeShipping ? STANDARD_SHIPPING_FEE : 0;
   const grandTotal = Math.max(0, cartTotal - discountAmount + shippingFee);
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
+  /**
+   * Người dùng bấm chọn một voucher trong danh sách.
+   *
+   * Vẫn gọi /vouchers/apply chứ không tin số tiền giảm mà danh sách đã hiển
+   * thị: giữa lúc tải danh sách và lúc bấm, giỏ hàng có thể đã đổi hoặc voucher
+   * vừa hết lượt. Server phải là nơi chốt lại.
+   */
+  const handleSelectVoucher = async (voucher) => {
     setCouponError("");
-
-    if (!couponCode.trim()) {
-      setCouponError("Vui lòng nhập mã giảm giá.");
-      return;
-    }
-
     setCouponLoading(true);
     try {
-      const res = await applyVoucher(couponCode.trim().toUpperCase(), cartTotal);
+      const res = await applyVoucher(voucher.code, cartTotal);
       setAppliedVoucher(res.result);
       triggerToast(`Đã áp dụng mã ${res.result.code}!`);
-      setCouponCode("");
     } catch (err) {
       setCouponError(err.response?.data?.message || "Mã giảm giá không hợp lệ hoặc đã hết hạn.");
     } finally {
@@ -280,27 +280,13 @@ export default function CartPage() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleApplyCoupon} className="flex gap-2 max-w-md">
-                    <input
-                      type="text"
-                      placeholder="Nhập mã voucher..."
-                      value={couponCode}
-                      onChange={(e) => {
-                        setCouponCode(e.target.value);
-                        setCouponError("");
-                      }}
-                      className={`flex-1 px-3 py-2 text-xs border rounded-xl outline-none placeholder-slate-400 transition-all ${
-                        couponError ? "border-red-500 bg-red-50/20" : "border-slate-200 focus:border-accent"
-                      }`}
-                    />
-                    <button
-                      type="submit"
-                      disabled={couponLoading}
-                      className="bg-slate-900 hover:bg-accent text-white font-bold text-xs px-4 rounded-full transition-colors disabled:opacity-60"
-                    >
-                      {couponLoading ? "Đang kiểm tra..." : "Áp dụng"}
-                    </button>
-                  </form>
+                  <VoucherPicker
+                    cartTotal={cartTotal}
+                    appliedCode={appliedVoucher?.code}
+                    onSelect={handleSelectVoucher}
+                    onRemove={handleRemoveCoupon}
+                    applying={couponLoading}
+                  />
                 )}
 
                 {couponError && (
