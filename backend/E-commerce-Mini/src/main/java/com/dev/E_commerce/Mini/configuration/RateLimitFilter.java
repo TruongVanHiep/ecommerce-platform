@@ -31,10 +31,13 @@ import java.util.concurrent.TimeUnit;
  * Giới hạn số request theo địa chỉ IP, chia làm 3 mức:
  *
  * <ul>
- *   <li>STRICT — các route xác thực (đăng nhập, đăng ký, áp voucher): mặc định
- *       5 lần / 15 phút. Đây là lớp chặn brute force mật khẩu và dò mã voucher.</li>
- *   <li>WRITE  — mọi request ghi dữ liệu (POST/PUT/DELETE) còn lại: 60 / phút.</li>
- *   <li>GLOBAL — toàn bộ request còn lại: 200 / phút.</li>
+ *   <li>STRICT   — đăng nhập và áp voucher: mặc định 5 lần / 15 phút. Đây là
+ *       lớp chặn brute force mật khẩu và dò mã voucher.</li>
+ *   <li>REGISTER — đăng ký tài khoản: mặc định 20 lần / 15 phút. Rộng hơn
+ *       STRICT vì đăng ký hỏng không giúp kẻ tấn công biết thêm điều gì, trong
+ *       khi người dùng thật hay phải thử lại.</li>
+ *   <li>WRITE    — mọi request ghi dữ liệu (POST/PUT/DELETE) còn lại: 60 / phút.</li>
+ *   <li>GLOBAL   — toàn bộ request còn lại: 200 / phút.</li>
  * </ul>
  *
  * Bucket lưu trong bộ nhớ tiến trình (Caffeine, tự dọn sau 30 phút không dùng).
@@ -59,12 +62,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** Các đường dẫn hạ tầng phải luôn đi lọt: Docker healthcheck 10s/lần và Prometheus scrape. */
     private static final List<String> EXCLUDED_PREFIXES = List.of("/actuator");
 
-    /** Các route xác thực/nhạy cảm cần siết chặt nhất. */
+    /**
+     * Các route mà mỗi lần thử sai đều giúp kẻ tấn công tiến gần hơn tới mục
+     * tiêu: dò mật khẩu, dò mã voucher. Đây là chỗ cần siết chặt nhất.
+     */
     private static final Set<String> STRICT_PATHS = Set.of(
             "/api/auth/login",
-            "/api/users",
             "/api/vouchers/apply"
     );
+
+    /**
+     * Đăng ký tài khoản. Tách khỏi STRICT vì bản chất khác hẳn: đăng ký hỏng
+     * không tiết lộ gì cho kẻ tấn công, trong khi người dùng thật rất hay phải
+     * thử lại vài lần (trùng tên đăng nhập, trùng email, sai định dạng). Giữ
+     * chung mức 5 lần/15 phút với đăng nhập khiến người dùng bình thường bị
+     * chặn oan — nhất là khi bucket khoá theo IP nên nhiều người sau cùng một
+     * NAT phải dùng chung hạn mức.
+     */
+    private static final Set<String> REGISTER_PATHS = Set.of("/api/users");
 
     private final MeterRegistry meterRegistry;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -74,6 +89,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Value("${app.rate-limit.strict-window-minutes:15}")
     private int strictWindowMinutes;
+
+    @Value("${app.rate-limit.register-capacity:20}")
+    private int registerCapacity;
+
+    @Value("${app.rate-limit.register-window-minutes:15}")
+    private int registerWindowMinutes;
 
     @Value("${app.rate-limit.write-capacity:60}")
     private int writeCapacity;
@@ -124,10 +145,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String method = request.getMethod();
-        // Chỉ siết STRICT với thao tác ghi: GET /api/users là API quản trị đã có
+        // Chỉ siết với thao tác ghi: GET /api/users là API quản trị đã có
         // @PreAuthorize riêng, không cần chung giới hạn với luồng đăng nhập.
         if (HttpMethod.POST.matches(method) && STRICT_PATHS.contains(path)) {
             return Tier.STRICT;
+        }
+        if (HttpMethod.POST.matches(method) && REGISTER_PATHS.contains(path)) {
+            return Tier.REGISTER;
         }
         if (HttpMethod.POST.matches(method) || HttpMethod.PUT.matches(method) || HttpMethod.DELETE.matches(method)) {
             return Tier.WRITE;
@@ -140,6 +164,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             case STRICT -> Bandwidth.builder()
                     .capacity(strictCapacity)
                     .refillIntervally(strictCapacity, Duration.ofMinutes(strictWindowMinutes))
+                    .build();
+            case REGISTER -> Bandwidth.builder()
+                    .capacity(registerCapacity)
+                    .refillIntervally(registerCapacity, Duration.ofMinutes(registerWindowMinutes))
                     .build();
             case WRITE -> Bandwidth.builder()
                     .capacity(writeCapacity)
@@ -170,6 +198,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private enum Tier {
-        STRICT, WRITE, GLOBAL
+        STRICT, REGISTER, WRITE, GLOBAL
     }
 }

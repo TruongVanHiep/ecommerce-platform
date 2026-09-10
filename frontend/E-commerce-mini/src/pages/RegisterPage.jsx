@@ -85,7 +85,11 @@ export default function RegisterPage() {
         dob: formData.dob,
         phone: formData.phone,
         address: formData.address,
-        roles: ["USER"],
+        // KHÔNG gửi `roles`: backend cố tình bỏ trường này khỏi
+        // UserRegisterRequest để client không tự chọn được vai trò, và luôn
+        // gán cứng USER. Trước đây frontend vẫn gửi `roles: ["USER"]` — không
+        // gây lỗi vì Jackson bỏ qua trường lạ, nhưng để lại dễ khiến người đọc
+        // tưởng vai trò do client quyết định.
       });
 
       if (response?.result) {
