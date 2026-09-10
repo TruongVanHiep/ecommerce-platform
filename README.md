@@ -45,10 +45,27 @@ Lần đầu chạy còn hai bước nữa:
 
 ## Ảnh chụp màn hình
 
-<!-- Thêm ảnh vào docs/images/ rồi bỏ chú thích 3 dòng dưới đây -->
-<!-- ![Trang chủ](docs/images/home.png) -->
-<!-- ![Dashboard Grafana](docs/images/grafana.png) -->
-<!-- ![Trace và log tương quan](docs/images/trace.png) -->
+**Trang chủ** — carousel lấy ảnh trực tiếp từ danh sách sản phẩm trong database,
+tự chuyển 5 giây một lần, có nút tạm dừng.
+
+![Trang chủ](docs/images/home.png)
+
+**Giỏ hàng** — voucher hiện sẵn để bấm chọn kèm số tiền được giảm tính theo giá
+trị giỏ hàng, thay vì bắt người dùng tự biết mã rồi gõ tay.
+
+![Giỏ hàng và voucher](docs/images/cart.png)
+
+**Business metrics** — đơn hàng/phút, doanh thu/giờ, giá trị đơn trung bình,
+voucher bị từ chối theo lý do. Đây là metric nghiệp vụ do ứng dụng tự phát ra
+qua Micrometer, không phải chỉ số hạ tầng có sẵn.
+
+![Dashboard Business Metrics](docs/images/grafana.png)
+
+**Tương quan log ↔ trace** — từ một dòng log bấm thẳng sang trace tương ứng
+trong Tempo. Trace tách được từng chặng: xác thực token 856µs, kiểm tra quyền
+227µs, xử lý nghiệp vụ 23.67ms trong tổng 27.67ms.
+
+![Tương quan log và trace](docs/images/trace.png)
 
 ## Tính năng
 
