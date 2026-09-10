@@ -2,6 +2,7 @@ import { useEffect, useState, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getProducts } from "../services/productService";
 import ProductCard from "../components/ProductCard";
+import HeroCarousel from "../components/HeroCarousel";
 import { CartContext } from "../context/CartContext";
 
 const journeySteps = [
@@ -79,7 +80,9 @@ export default function HomePage() {
         return (a.title || a.name)?.localeCompare(b.title || b.name);
     });
 
-    const heroProduct = products[0];
+    // Carousel chỉ nhận sản phẩm CÓ ảnh: sản phẩm thiếu ảnh lọt vào sẽ thành
+    // một slide trống, người dùng tưởng trang lỗi.
+    const heroProducts = products.filter((p) => p.image);
 
     return (
         <div className="bg-bg-light">
@@ -104,16 +107,8 @@ export default function HomePage() {
                     </div>
 
                     <div className="relative">
-                        <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-3 shadow-2xl">
-                            <div className="rounded-[20px] overflow-hidden aspect-[4/3] bg-bg-dark-soft flex items-center justify-center">
-                                {heroProduct?.image ? (
-                                    <img src={heroProduct.image} alt={heroProduct.name} className="w-full h-full object-contain mix-blend-luminosity opacity-90 p-6" />
-                                ) : (
-                                    <div className="w-24 h-24 rounded-2xl bg-accent/20 animate-float" />
-                                )}
-                            </div>
-                        </div>
-                        <div className="absolute -top-4 -right-4 w-20 h-20 rounded-2xl bg-accent/20 blur-2xl" />
+                        <HeroCarousel products={heroProducts} />
+                        <div className="absolute -top-4 -right-4 w-20 h-20 rounded-2xl bg-accent/20 blur-2xl pointer-events-none" />
                     </div>
                 </div>
 
