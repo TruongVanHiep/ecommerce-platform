@@ -7,6 +7,7 @@ import com.dev.E_commerce.Mini.entity.Payment;
 import com.dev.E_commerce.Mini.entity.User;
 import com.dev.E_commerce.Mini.enums.PaymentMethod;
 import com.dev.E_commerce.Mini.enums.PaymentStatus;
+import com.dev.E_commerce.Mini.event.OrderPaidEvent;
 import com.dev.E_commerce.Mini.exception.AppException;
 import com.dev.E_commerce.Mini.exception.ErrorCode;
 import com.dev.E_commerce.Mini.mapper.PaymentMapper;
@@ -18,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class PaymentService {
     PaymentMapper paymentMapper;
     PaymentLookupService paymentLookupService;
     SepayService sepayService;
+    ApplicationEventPublisher eventPublisher;
     MeterRegistry meterRegistry;
 
     private User currentUser() {
@@ -76,6 +79,8 @@ public class PaymentService {
             return sepayService.withTransferInfo(
                     paymentMapper.toPaymentResponse(createNewPayment(order, request.getMethod())));
         } catch (DataIntegrityViolationException e) {
+            // Request thua cuộc đua: bên thắng đã tạo thanh toán và tự phát email,
+            // nhánh này chỉ trả lại kết quả, không phát thêm lần nữa.
             return sepayService.withTransferInfo(paymentLookupService.findByOrderIdOrThrow(orderId, e));
         }
     }
@@ -94,6 +99,12 @@ public class PaymentService {
         meterRegistry.counter("payments.processed", "method", method.name(), "status", saved.getStatus().name()).increment();
         log.info("Payment created paymentId={} orderId={} method={} status={} amount={}",
                 saved.getId(), order.getId(), method, saved.getStatus(), saved.getAmount());
+
+        // COD được chốt ngay lúc tạo nên gửi email xác nhận luôn. Phương thức khác
+        // còn PENDING thì chờ tới khi tiền về thật (SePay: SepayService#handleWebhook).
+        if (saved.getStatus() == PaymentStatus.SUCCESS) {
+            eventPublisher.publishEvent(OrderPaidEvent.of(order));
+        }
 
         return saved;
     }

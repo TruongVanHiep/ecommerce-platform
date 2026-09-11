@@ -4,17 +4,21 @@ import com.dev.E_commerce.Mini.dto.request.SepayWebhookRequest;
 import com.dev.E_commerce.Mini.dto.response.PaymentResponse;
 import com.dev.E_commerce.Mini.entity.Order;
 import com.dev.E_commerce.Mini.entity.Payment;
+import com.dev.E_commerce.Mini.entity.User;
 import com.dev.E_commerce.Mini.enums.PaymentMethod;
 import com.dev.E_commerce.Mini.enums.PaymentStatus;
 import com.dev.E_commerce.Mini.enums.Status;
+import com.dev.E_commerce.Mini.event.OrderPaidEvent;
 import com.dev.E_commerce.Mini.repository.OrderRepository;
 import com.dev.E_commerce.Mini.repository.PaymentRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -32,7 +36,7 @@ import static org.mockito.Mockito.when;
 /**
  * Webhook SePay là endpoint public có quyền đánh dấu đơn đã thanh toán, nên
  * test tập trung vào các lý do nó phải TỪ CHỐI hoặc BỎ QUA — đó là chỗ một lỗi
- * nhỏ biến thành mất tiền thật.
+ * nhỏ biến thành mất tiền thật, hoặc gửi email xác nhận cho đơn chưa ai trả.
  */
 @ExtendWith(MockitoExtension.class)
 class SepayServiceTest {
@@ -42,12 +46,13 @@ class SepayServiceTest {
 
     @Mock PaymentRepository paymentRepository;
     @Mock OrderRepository orderRepository;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     SepayService sepayService;
 
     @BeforeEach
     void setUp() {
-        sepayService = new SepayService(paymentRepository, orderRepository, new SimpleMeterRegistry());
+        sepayService = new SepayService(paymentRepository, orderRepository, new SimpleMeterRegistry(), eventPublisher);
         // @Value không được xử lý khi khởi tạo thủ công nên gán tay.
         ReflectionTestUtils.setField(sepayService, "apiKey", API_KEY);
         ReflectionTestUtils.setField(sepayService, "bankCode", "MBBank");
@@ -75,6 +80,16 @@ class SepayServiceTest {
                 .build();
     }
 
+    /**
+     * ApplicationEventPublisher có 2 overload: publishEvent(ApplicationEvent) và
+     * publishEvent(Object). Matcher any() trơn khiến Java chọn overload
+     * ApplicationEvent — mà code gọi overload Object — nên verify(never()) sẽ
+     * đúng cả khi email thật sự bị phát. Phải chỉ rõ Object.class.
+     */
+    private void verifyNoEmailEvent() {
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
     // ---------- Xác thực ----------
 
     @Test
@@ -99,10 +114,13 @@ class SepayServiceTest {
     // ---------- Luồng thành công ----------
 
     @Test
-    void chuyenDuTien_ghiNhanThanhToan_vaChuyenDonSangPaid() {
+    void chuyenDuTien_ghiNhanThanhToan_chuyenDonSangPaid_vaPhatEmailXacNhan() {
         Payment payment = pendingSepay(7L, 100_000);
+        User user = User.builder().email("khach@example.com").fullName("Khach Hang").build();
         Order order = mock(Order.class);
         when(order.getStatus()).thenReturn(Status.PENDING);
+        when(order.getUser()).thenReturn(user);
+        when(order.getId()).thenReturn(19L);
         when(paymentRepository.existsByTransactionId("SEPAY-500")).thenReturn(false);
         when(paymentRepository.findByOrder_Id(19L)).thenReturn(Optional.of(payment));
         when(paymentRepository.markPaidIfPending(eq(7L), eq("SEPAY-500"), any(),
@@ -113,12 +131,19 @@ class SepayServiceTest {
 
         assertThat(result).isEqualTo(SepayService.WebhookResult.PROCESSED);
         verify(order).setStatus(Status.PAID);
+
+        ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue()).isInstanceOf(OrderPaidEvent.class);
+        OrderPaidEvent paid = (OrderPaidEvent) event.getValue();
+        assertThat(paid.orderId()).isEqualTo(19L);
+        assertThat(paid.userEmail()).isEqualTo("khach@example.com");
     }
 
-    // ---------- Các lý do phải bỏ qua ----------
+    // ---------- Các lý do phải bỏ qua (và KHÔNG gửi email) ----------
 
     @Test
-    void chuyenThieuTien_giuTrangThaiCho_khongGhiNhan() {
+    void chuyenThieuTien_giuTrangThaiCho_khongGhiNhan_khongGuiEmail() {
         when(paymentRepository.existsByTransactionId("SEPAY-501")).thenReturn(false);
         when(paymentRepository.findByOrder_Id(19L)).thenReturn(Optional.of(pendingSepay(7L, 100_000)));
 
@@ -126,10 +151,11 @@ class SepayServiceTest {
 
         assertThat(result).isEqualTo(SepayService.WebhookResult.IGNORED);
         verify(paymentRepository, never()).markPaidIfPending(anyLong(), any(), any(), any(), any());
+        verifyNoEmailEvent();
     }
 
     @Test
-    void webhookTrung_daXuLyRoi_boQua() {
+    void webhookTrung_daXuLyRoi_boQua_khongGuiEmailLanHai() {
         // SePay gửi lại tới 7 lần nếu lần trước không nhận được phản hồi.
         when(paymentRepository.existsByTransactionId("SEPAY-502")).thenReturn(true);
 
@@ -137,10 +163,11 @@ class SepayServiceTest {
 
         assertThat(result).isEqualTo(SepayService.WebhookResult.IGNORED);
         verify(paymentRepository, never()).findByOrder_Id(anyLong());
+        verifyNoEmailEvent();
     }
 
     @Test
-    void haiWebhookDuaNhau_benThuaKhongCapNhatDonLanHai() {
+    void haiWebhookDuaNhau_benThuaKhongCapNhatDon_khongGuiEmailLanHai() {
         when(paymentRepository.existsByTransactionId("SEPAY-503")).thenReturn(false);
         when(paymentRepository.findByOrder_Id(19L)).thenReturn(Optional.of(pendingSepay(7L, 100_000)));
         // Câu UPDATE có điều kiện status = PENDING trả 0: request khác vừa ghi trước.
@@ -150,6 +177,7 @@ class SepayServiceTest {
 
         assertThat(result).isEqualTo(SepayService.WebhookResult.IGNORED);
         verify(orderRepository, never()).findById(anyLong());
+        verifyNoEmailEvent();
     }
 
     @Test
