@@ -77,13 +77,17 @@ phẩm đã thực sự mua). Nhận email xác nhận đơn hàng.
 được giảm tính theo giá trị giỏ hàng hiện tại. Mã chưa đủ điều kiện vẫn hiện,
 kèm gợi ý cần mua thêm bao nhiêu.
 
+**Thanh toán** — COD hoặc chuyển khoản ngân hàng qua mã VietQR. Tiền về tài
+khoản là đơn tự chuyển sang "Đã thanh toán" nhờ webhook SePay, không cần ai đối
+soát tay.
+
 **Quản trị** — quản lý sản phẩm, đơn hàng, voucher; phân quyền theo role và
 permission ở tầng method (`@PreAuthorize`).
 
 **Tài khoản** — đăng ký, đăng nhập, đăng nhập Google (OAuth2), access token
 ngắn hạn kèm refresh token xoay vòng.
 
-Quy mô: 14 controller, 18 service, 15 entity.
+Quy mô: 15 controller, 19 service, 15 entity.
 
 ## Kiến trúc
 
@@ -167,6 +171,22 @@ thu, số lần hết hàng, voucher bị từ chối theo lý do, thanh toán t
 Có sẵn 2 dashboard và 3 alert rule (tỉ lệ 5xx, p95 latency, backend down), tất
 cả được provision tự động khi Grafana khởi động.
 
+### Webhook thanh toán không tin bất cứ thứ gì được gửi tới
+
+Webhook SePay là endpoint public có quyền đánh dấu đơn đã trả tiền, nên mọi
+request đều bị coi là không đáng tin cho tới khi qua đủ các lớp kiểm tra:
+
+| Rủi ro | Cách chặn |
+|---|---|
+| Ai cũng gọi được endpoint | Header `Authorization: Apikey ...`, so bằng `MessageDigest.isEqual` — thời gian so sánh không lộ ra đã đoán đúng bao nhiêu ký tự |
+| SePay gửi lại tới 7 lần | Lưu mã giao dịch, lần sau bỏ qua |
+| Hai webhook trùng tới cùng lúc | `UPDATE ... WHERE status = PENDING` — chỉ một request thắng, không cập nhật đơn hai lần |
+| Khách chuyển thiếu | So số tiền với đơn; thiếu thì giữ trạng thái chờ và đếm metric |
+| Tiền về tài khoản khác cùng liên kết SePay | Đối chiếu số tài khoản nhận |
+
+Giao dịch không liên quan đơn nào (lương, bạn bè chuyển tiền) vẫn trả
+`{"success": true}` — trả lỗi thì SePay gửi lại vô ích 7 lần trong 5 tiếng.
+
 ### Email xác nhận đơn hàng vào được hộp thư đến
 
 Ban đầu gửi qua SMTP của Gmail bằng app password. Thư gửi thành công, log không
@@ -201,10 +221,12 @@ cắt bỏ thẻ `<style>` và không hỗ trợ flexbox/grid.
 cd backend/E-commerce-Mini && ./mvnw test
 ```
 
-13 test, chạy được ở mọi máy có Docker:
+28 test, chạy được ở mọi máy có Docker:
 
-- **12 unit test** (JUnit 5 + Mockito) — rate limiting (4) và vòng đời refresh
-  token (8): xoay vòng, phát hiện tái sử dụng, thu hồi toàn bộ phiên.
+- **27 unit test** (JUnit 5 + Mockito) — rate limiting (6); vòng đời refresh
+  token (8): xoay vòng, phát hiện tái sử dụng, thu hồi toàn bộ phiên; và webhook
+  thanh toán SePay (13): từ chối sai khoá, bỏ qua webhook trùng, chuyển thiếu
+  tiền, tiền về tài khoản khác, hai webhook chạy đua nhau.
 - **1 integration test** — nạp toàn bộ Spring context trên một MySQL thật do
   **Testcontainers** dựng trong Docker, chạy xong tự xoá. Nó bắt được lớp lỗi
   mà mock không thấy: bean cấu hình sai, schema Hibernate không dựng được,

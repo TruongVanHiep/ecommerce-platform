@@ -62,6 +62,10 @@ Biến môi trường:
 | `APP_CORS_ORIGINS` | `https://<domain>` | |
 | `SERVER_FORWARD_HEADERS_STRATEGY` | `framework` | **Bắt buộc**, xem phần cuối |
 | `TRACING_SAMPLE_RATE` | `0` | **Bắt buộc**, xem phần cuối |
+| `SEPAY_API_KEY` | API key webhook ở SePay | Để dạng secret. Bỏ trống thì tắt thanh toán chuyển khoản |
+| `SEPAY_BANK_CODE` | vd `MBBank`, `Vietcombank` | Tên viết tắt ngân hàng theo VietQR |
+| `SEPAY_ACCOUNT_NUMBER` | số tài khoản nhận tiền | Phải trùng tài khoản đã liên kết SePay |
+| `SEPAY_ACCOUNT_NAME` | tên chủ tài khoản | Chỉ để hiển thị cho khách đối chiếu |
 
 Nếu MySQL của nền tảng báo lỗi `Public Key Retrieval is not allowed`, thêm
 `&allowPublicKeyRetrieval=true` vào cuối `DB_URL`.

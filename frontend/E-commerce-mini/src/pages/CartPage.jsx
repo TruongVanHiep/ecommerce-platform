@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import { formatVND } from "../lib/formatCurrency";
 import { applyVoucher } from "../services/voucherService";
 import VoucherPicker from "../components/VoucherPicker";
+import SepayPaymentModal from "../components/SepayPaymentModal";
 import { createOrder } from "../services/orderService";
 import { createPayment } from "../services/paymentService";
 
@@ -29,6 +30,28 @@ export default function CartPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [completedOrder, setCompletedOrder] = useState(null);
+  // Thanh toán SePay đang chờ tiền về. Có giá trị => đang hiện modal mã QR.
+  const [sepayPayment, setSepayPayment] = useState(null);
+
+  // Webhook SePay xác nhận tiền đã về: đóng mã QR, hiện modal thành công như
+  // mọi phương thức khác.
+  const handleSepayPaid = () => {
+    setSepayPayment(null);
+    setShowSuccessModal(true);
+  };
+
+  // Khách đóng mã QR khi chưa chuyển. Đơn vẫn giữ ở trạng thái chờ thanh toán —
+  // chuyển khoản sau với đúng nội dung thì webhook vẫn ghi nhận bình thường,
+  // nên nhắc lại nội dung trước khi đưa về trang lịch sử đơn.
+  const handleSepayLater = () => {
+    triggerToast(
+      `Đơn #${completedOrder?.orderId} đang chờ thanh toán — nội dung chuyển khoản: ${sepayPayment?.transferContent}`,
+      "info"
+    );
+    setSepayPayment(null);
+    setCompletedOrder(null);
+    navigate("/orders");
+  };
   const [shippingInfo, setShippingInfo] = useState({
     fullName: user?.fullName || user?.username || "",
     phone: "",
@@ -115,11 +138,17 @@ export default function CartPage() {
       });
       const order = orderRes.result;
 
-      await createPayment(order.orderId, shippingInfo.paymentMethod);
+      const paymentRes = await createPayment(order.orderId, shippingInfo.paymentMethod);
 
       setCompletedOrder(order);
       setShowCheckoutModal(false);
-      setShowSuccessModal(true);
+      if (shippingInfo.paymentMethod === "SEPAY") {
+        // Chưa phải "thành công": đơn đã tạo nhưng tiền chưa về. Hiện mã QR và
+        // chờ webhook SePay xác nhận, lúc đó mới chuyển sang modal thành công.
+        setSepayPayment(paymentRes.result);
+      } else {
+        setShowSuccessModal(true);
+      }
       setAppliedVoucher(null);
       setIdempotencyKey(null); // lần đặt hàng tiếp theo phải là 1 key mới
       await refreshCart();
@@ -442,20 +471,22 @@ export default function CartPage() {
                     </div>
                   </label>
 
+                  {/* Thay chỗ của VNPAY: tùy chọn đó chưa từng được tích hợp, chọn vào
+                      thì đơn kẹt ở trạng thái chờ thanh toán mãi mãi. */}
                   <label className={`border rounded-xl p-3 flex items-center gap-2.5 cursor-pointer transition-all ${
-                    shippingInfo.paymentMethod === "VNPAY" ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"
+                    shippingInfo.paymentMethod === "SEPAY" ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"
                   }`}>
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="VNPAY"
-                      checked={shippingInfo.paymentMethod === "VNPAY"}
+                      value="SEPAY"
+                      checked={shippingInfo.paymentMethod === "SEPAY"}
                       onChange={handleInputChange}
                       className="accent-accent"
                     />
                     <div className="text-[11px]">
-                      <span className="block font-bold text-slate-800">VNPAY</span>
-                      <span className="text-[9px] text-slate-400 block mt-0.5">Chờ tích hợp cổng thanh toán</span>
+                      <span className="block font-bold text-slate-800">Chuyển khoản</span>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">Quét mã QR, xác nhận tự động</span>
                     </div>
                   </label>
                 </div>
@@ -486,6 +517,16 @@ export default function CartPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* SEPAY: MÃ QR CHUYỂN KHOẢN, CHỜ WEBHOOK XÁC NHẬN */}
+      {sepayPayment && completedOrder && (
+        <SepayPaymentModal
+          orderId={completedOrder.orderId}
+          payment={sepayPayment}
+          onPaid={handleSepayPaid}
+          onClose={handleSepayLater}
+        />
       )}
 
       {/* SUCCESS CONFIRMATION MODAL */}

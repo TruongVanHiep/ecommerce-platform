@@ -23,4 +23,14 @@ public class PaymentResponse {
     String transactionId;
     LocalDateTime paidAt;
     LocalDateTime createdAt;
+
+    // Thông tin chuyển khoản — chỉ có giá trị khi method = SEPAY và chưa thanh
+    // toán, để frontend hiện mã QR. Các trường hợp khác đều null.
+    // Không lưu trong bảng payments: số tài khoản đổi thì mọi đơn cũ phải trỏ
+    // theo, nên tính lại từ cấu hình mỗi lần trả về (xem SepayService).
+    String bankCode;
+    String accountNumber;
+    String accountName;
+    String transferContent;
+    String qrUrl;
 }

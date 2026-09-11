@@ -57,6 +57,25 @@ jwt:
   refresh-token-days: 7
 
 app:
+  sepay:
+    # Thanh toán chuyển khoản qua SePay. Bỏ trống api-key/bank-code/account-number
+    # => phương thức SePay tắt: backend từ chối tạo thanh toán SePay, các phương
+    # thức khác vẫn chạy bình thường.
+    #
+    # API key SePay gửi kèm webhook trong header "Authorization: Apikey <key>".
+    # Lấy ở SePay > Tích hợp Webhooks, lúc tạo webhook chọn kiểu xác thực API Key.
+    api-key: ${SEPAY_API_KEY:}
+    # Tên viết tắt ngân hàng theo danh sách VietQR, vd: MBBank, Vietcombank, ACB, TPBank.
+    bank-code: ${SEPAY_BANK_CODE:}
+    # Phải trùng tài khoản đã liên kết với SePay — webhook báo tiền về tài khoản
+    # khác sẽ bị bỏ qua.
+    account-number: ${SEPAY_ACCOUNT_NUMBER:}
+    # Chỉ để hiển thị cho khách đối chiếu trước khi chuyển.
+    account-name: ${SEPAY_ACCOUNT_NAME:}
+    # Nội dung chuyển khoản = tiền tố + mã đơn, vd DH19. Nên khai báo trùng tiền
+    # tố này trong phần "Cấu hình mã thanh toán" của SePay để SePay tự tách mã
+    # vào trường `code` của webhook.
+    transfer-prefix: ${SEPAY_TRANSFER_PREFIX:DH}
   mail:
     # smtp  — gửi qua Gmail bằng app password. Đủ cho môi trường phát triển,
     #         nhưng thư gần như luôn rơi vào thư rác của người nhận vì địa chỉ
