@@ -6,6 +6,7 @@ import com.dev.E_commerce.Mini.entity.Payment;
 import com.dev.E_commerce.Mini.enums.PaymentMethod;
 import com.dev.E_commerce.Mini.enums.PaymentStatus;
 import com.dev.E_commerce.Mini.enums.Status;
+import com.dev.E_commerce.Mini.event.OrderPaidEvent;
 import com.dev.E_commerce.Mini.repository.OrderRepository;
 import com.dev.E_commerce.Mini.repository.PaymentRepository;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -15,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -52,6 +54,7 @@ public class SepayService {
     PaymentRepository paymentRepository;
     OrderRepository orderRepository;
     MeterRegistry meterRegistry;
+    ApplicationEventPublisher eventPublisher;
 
     // @NonFinal: @FieldDefaults(makeFinal = true) sẽ biến các trường này thành
     // final, và Spring không tiêm @Value vào trường final được — app sẽ chết lúc
@@ -222,6 +225,9 @@ public class SepayService {
             if (order.getStatus() == Status.PENDING) {
                 order.setStatus(Status.PAID);
             }
+            // Giờ mới là lúc gửi email xác nhận: tiền đã về thật. Listener chạy
+            // AFTER_COMMIT nên chỉ gửi khi transaction này ghi xong.
+            eventPublisher.publishEvent(OrderPaidEvent.of(order));
         });
 
         meterRegistry.counter("payments.processed", "method", PaymentMethod.SEPAY.name(),

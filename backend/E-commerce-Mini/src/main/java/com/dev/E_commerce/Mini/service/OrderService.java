@@ -4,7 +4,6 @@ import com.dev.E_commerce.Mini.dto.request.OrderRequest;
 import com.dev.E_commerce.Mini.dto.response.OrderResponse;
 import com.dev.E_commerce.Mini.entity.*;
 import com.dev.E_commerce.Mini.enums.Status;
-import com.dev.E_commerce.Mini.event.OrderCreatedEvent;
 import com.dev.E_commerce.Mini.exception.AppException;
 import com.dev.E_commerce.Mini.exception.ErrorCode;
 import com.dev.E_commerce.Mini.mapper.OrderMapper;
@@ -17,7 +16,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -39,7 +37,6 @@ public class OrderService {
     UserRepository userRepository;
     CartRepository cartRepository;
     VoucherService voucherService;
-    ApplicationEventPublisher eventPublisher;
     OrderLookupService orderLookupService;
     ProductRepository productRepository;
     MeterRegistry meterRegistry;
@@ -151,9 +148,9 @@ public class OrderService {
             voucherService.recordUsage(voucher, user, savedOrder);
         }
 
-        // Chỉ thật sự gửi sau khi transaction này commit thành công (xem OrderEventListener).
-        eventPublisher.publishEvent(new OrderCreatedEvent(
-                savedOrder.getId(), user.getEmail(), user.getFullName(), savedOrder.getTotalPrice()));
+        // KHÔNG gửi email xác nhận ở đây: đơn vừa tạo chưa được thanh toán. Email đi
+        // khi thanh toán chốt — COD ngay lúc tạo thanh toán, chuyển khoản khi webhook
+        // SePay báo tiền về (xem OrderPaidEvent).
 
         meterRegistry.counter("orders.placed", "status", "success").increment();
         meterRegistry.summary("orders.value").record(savedOrder.getTotalPrice().doubleValue());
