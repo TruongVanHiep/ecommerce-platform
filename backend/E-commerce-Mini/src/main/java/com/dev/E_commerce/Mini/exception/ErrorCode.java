@@ -14,6 +14,10 @@ public enum ErrorCode {
     // INVALID_INPUT ("Dữ liệu gửi lên không hợp lệ") — người dùng không biết
     // trường nào sai nên sửa lung tung rồi bỏ cuộc.
     EMAIL_EXISTED(1074, "Email đã được sử dụng", HttpStatus.BAD_REQUEST),
+    // Phương thức thanh toán có trong enum nhưng chưa cấu hình trên môi trường
+    // này (vd SePay thiếu số tài khoản/API key). Chặn ngay lúc tạo thanh toán
+    // thay vì để khách quét một mã QR trỏ tới tài khoản rỗng.
+    PAYMENT_METHOD_UNAVAILABLE(1075, "Phương thức thanh toán này hiện chưa khả dụng", HttpStatus.BAD_REQUEST),
     INVALID_TOKEN(1002,"Invalid token", HttpStatus.UNAUTHORIZED),
     UNAUTHENTICATED(1017,"Unauthorized !", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1018,"You don't have permission !", HttpStatus.FORBIDDEN),

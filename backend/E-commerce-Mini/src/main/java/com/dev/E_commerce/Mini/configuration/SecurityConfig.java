@@ -40,7 +40,12 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     // /auth/refresh và /auth/logout phải public: khi client gọi tới thì access token
     // đã hết hạn, chính refresh token mới là thứ dùng để xác thực.
-    private final String[] ENDPOINT_PUBLIC = {"/api/users", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout"};
+    //
+    // Webhook SePay cũng phải public: server SePay gọi tới không có JWT. Nó tự
+    // xác thực bằng header "Authorization: Apikey ..." trong SepayService — và
+    // header đó không bắt đầu bằng "Bearer" nên bộ lọc JWT bỏ qua, không chặn nhầm.
+    private final String[] ENDPOINT_PUBLIC = {"/api/users", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
+            "/api/payments/sepay/webhook"};
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity

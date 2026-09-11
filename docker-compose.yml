@@ -32,6 +32,11 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+      # Tùy chọn: bỏ trống thì phương thức thanh toán SePay tắt.
+      SEPAY_API_KEY: ${SEPAY_API_KEY:-}
+      SEPAY_BANK_CODE: ${SEPAY_BANK_CODE:-}
+      SEPAY_ACCOUNT_NUMBER: ${SEPAY_ACCOUNT_NUMBER:-}
+      SEPAY_ACCOUNT_NAME: ${SEPAY_ACCOUNT_NAME:-}
     ports:
       - "8080:8080"
     healthcheck:

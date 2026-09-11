@@ -36,6 +36,7 @@ public class PaymentService {
     UserRepository userRepository;
     PaymentMapper paymentMapper;
     PaymentLookupService paymentLookupService;
+    SepayService sepayService;
     MeterRegistry meterRegistry;
 
     private User currentUser() {
@@ -62,13 +63,20 @@ public class PaymentService {
 
         Optional<Payment> existing = paymentRepository.findByOrder_Id(orderId);
         if (existing.isPresent()) {
-            return paymentMapper.toPaymentResponse(existing.get());
+            return sepayService.withTransferInfo(paymentMapper.toPaymentResponse(existing.get()));
+        }
+
+        // Chặn trước khi tạo bản ghi: SePay chưa cấu hình mà vẫn cho tạo thì
+        // khách nhận một mã QR trỏ tới tài khoản rỗng, chuyển tiền đi đâu không rõ.
+        if (request.getMethod() == PaymentMethod.SEPAY && !sepayService.isEnabled()) {
+            throw new AppException(ErrorCode.PAYMENT_METHOD_UNAVAILABLE);
         }
 
         try {
-            return paymentMapper.toPaymentResponse(createNewPayment(order, request.getMethod()));
+            return sepayService.withTransferInfo(
+                    paymentMapper.toPaymentResponse(createNewPayment(order, request.getMethod())));
         } catch (DataIntegrityViolationException e) {
-            return paymentLookupService.findByOrderIdOrThrow(orderId, e);
+            return sepayService.withTransferInfo(paymentLookupService.findByOrderIdOrThrow(orderId, e));
         }
     }
 
@@ -90,6 +98,11 @@ public class PaymentService {
         return saved;
     }
 
+    /**
+     * Frontend gọi lặp lại endpoint này để biết webhook SePay đã xác nhận tiền về
+     * chưa. Còn PENDING thì trả kèm thông tin chuyển khoản — người dùng tải lại
+     * trang vẫn thấy lại được mã QR.
+     */
     @Transactional(readOnly = true)
     public PaymentResponse getPaymentByOrder(Long orderId) {
         User user = currentUser();
@@ -98,6 +111,6 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findByOrder_Id(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_EXISTED));
-        return paymentMapper.toPaymentResponse(payment);
+        return sepayService.withTransferInfo(paymentMapper.toPaymentResponse(payment));
     }
 }
