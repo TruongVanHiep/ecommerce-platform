@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getProducts } from "../services/productService";
+import { getAllProducts } from "../services/productService";
 import ProductCard from "../components/ProductCard";
 import HeroCarousel from "../components/HeroCarousel";
 import { CartContext } from "../context/CartContext";
@@ -46,8 +46,9 @@ export default function HomePage() {
         try {
             setLoading(true);
             setError(null);
-            const response = await getProducts();
-            setProducts(response.result?.content || []);
+            // Lấy TẤT CẢ sản phẩm chứ không chỉ trang đầu: trang chủ lọc, sắp xếp
+            // và tìm kiếm phía client, thiếu sản phẩm nào là tìm không ra sản phẩm đó.
+            setProducts(await getAllProducts());
         } catch (error) {
             console.error("Error fetching products:", error);
             setError("Không thể tải sản phẩm. Vui lòng thử lại.");

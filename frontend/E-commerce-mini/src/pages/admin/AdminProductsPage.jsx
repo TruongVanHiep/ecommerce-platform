@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { getProducts, createProduct, updateProduct, deleteProduct } from "../../services/productService";
+import { getAllProducts, createProduct, updateProduct, deleteProduct } from "../../services/productService";
 import { getCategories } from "../../services/categoryService";
 import { formatVND } from "../../lib/formatCurrency";
 
 const emptyForm = { name: "", description: "", price: "", image: "", stock: "", categoryId: "" };
-
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -17,26 +16,55 @@ export default function AdminProductsPage() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [productsRes, categoriesRes] = await Promise.all([
-        getProducts({ page: 0, size: 200 }),
-        getCategories(),
-      ]);
-      setProducts(productsRes.result?.content || []);
-      setCategories(categoriesRes.result || []);
-    } catch (err) {
-      console.error("Error loading admin products:", err);
-      setError("Không thể tải danh sách sản phẩm.");
-    } finally {
-      setLoading(false);
+  // Chỉ TẢI dữ liệu, không đụng state — trả kết quả để nơi gọi tự áp vào.
+  // Tách như vậy vì lúc mở trang nó được gọi từ useEffect: một hàm vừa tải vừa
+  // setState thì trình lint React coi là setState đồng bộ trong effect (gây render
+  // dây chuyền), dù setState thật ra nằm sau await.
+  //
+  // Tải hai thứ ĐỘC LẬP. Trước đây dùng Promise.all: chỉ cần lời gọi sản phẩm lỗi
+  // là danh mục — dù đã tải xong — cũng bị bỏ theo, ô Danh mục trống trơn và không
+  // thể thêm sản phẩm nào.
+  const fetchAdminData = () => Promise.allSettled([getAllProducts(), getCategories()]);
+
+  const applyResults = ([productsResult, categoriesResult]) => {
+    if (productsResult.status === "fulfilled") {
+      setProducts(productsResult.value);
+    } else {
+      console.error("Error loading admin products:", productsResult.reason);
     }
+    if (categoriesResult.status === "fulfilled") {
+      setCategories(categoriesResult.value.result || []);
+    } else {
+      console.error("Error loading categories:", categoriesResult.reason);
+    }
+
+    const failed = [
+      productsResult.status === "rejected" && "sản phẩm",
+      categoriesResult.status === "rejected" && "danh mục",
+    ].filter(Boolean);
+    setError(failed.length ? `Không thể tải ${failed.join(" và ")}.` : null);
+    setLoading(false);
+  };
+
+  // Tải lại sau khi thêm/sửa/xoá. Lúc này đang ở trong event handler nên bật lại
+  // trạng thái đang tải thoải mái.
+  const reload = async () => {
+    setLoading(true);
+    setError(null);
+    applyResults(await fetchAdminData());
   };
 
   useEffect(() => {
-    loadData();
+    // setState nằm trong callback của promise, không chạy đồng bộ trong effect.
+    // Cờ cancelled: rời trang trước khi tải xong thì bỏ kết quả, không set state
+    // lên component đã bị tháo.
+    let cancelled = false;
+    fetchAdminData().then((results) => {
+      if (!cancelled) applyResults(results);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const categoryName = (categoryId) =>
@@ -93,7 +121,7 @@ export default function AdminProductsPage() {
         await createProduct(payload);
       }
       setShowForm(false);
-      await loadData();
+      await reload();
     } catch (err) {
       console.error("Error saving product:", err);
       setFormError(err.response?.data?.message || "Không thể lưu sản phẩm.");
@@ -106,7 +134,7 @@ export default function AdminProductsPage() {
     if (!confirm("Xóa sản phẩm này?")) return;
     try {
       await deleteProduct(id);
-      await loadData();
+      await reload();
     } catch (err) {
       console.error("Error deleting product:", err);
       alert(err.response?.data?.message || "Không thể xóa sản phẩm.");
