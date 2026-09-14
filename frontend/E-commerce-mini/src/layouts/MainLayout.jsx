@@ -6,7 +6,8 @@ export default function MainLayout() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow pt-20">
+      {/* Khớp chiều cao header cố định: h-16 trên điện thoại, h-20 từ md trở lên. */}
+      <main className="flex-grow pt-16 md:pt-20">
         <Outlet />
       </main>
       <Footer />
