@@ -126,10 +126,12 @@ export default function ProductDetailPage() {
                   </h1>
                 </div>
 
-                <div className="flex items-end justify-between gap-4">
-                  <div>
+                {/* flex-wrap: trên điện thoại giá tiền chiếm gần hết chiều ngang, không cho
+                    xuống dòng thì cột tồn kho bị ép hẹp tới mức chữ vỡ thành từng từ một dòng. */}
+                <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                  <div className="min-w-0">
                     <p className="text-sm text-text-muted-light mb-1">Giá bán</p>
-                    <div className="text-4xl sm:text-5xl font-semibold text-slate-900 tracking-tight">
+                    <div className="text-3xl sm:text-5xl font-semibold text-slate-900 tracking-tight">
                       {formatVND(product.price)}
                     </div>
                     {product.originalPrice != null && (
@@ -139,9 +141,9 @@ export default function ProductDetailPage() {
                     )}
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-sm text-text-muted-light mb-1">Stock</p>
-                    <p className="text-lg font-semibold text-slate-900">{stockLabel}</p>
+                  <div className="sm:text-right">
+                    <p className="text-sm text-text-muted-light mb-1">Tồn kho</p>
+                    <p className="text-base sm:text-lg font-semibold text-slate-900 whitespace-nowrap">{stockLabel}</p>
                   </div>
                 </div>
 

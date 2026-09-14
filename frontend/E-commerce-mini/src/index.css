@@ -1,10 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  /* Chữ thương hiệu "shopyora" trong logo. */
+  --font-brand: 'Archivo', Helvetica, Arial, sans-serif;
 
   /* Redesign tokens — xem REDESIGN.md */
   --color-bg-dark: #0B0B12;

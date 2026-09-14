@@ -1,5 +1,6 @@
 import { useState, useContext } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import Logo from "../components/Logo";
 import { login, decodeToken } from "../services/authService";
 import { AuthContext } from "../context/AuthContext";
 
@@ -75,13 +76,8 @@ export default function LoginPage() {
           <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-500/50 blur-3xl mix-blend-multiply" />
 
           <div className="relative z-10">
-            <Link to="/" className="flex items-center gap-2 mb-12 w-fit group">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 font-extrabold text-2xl shadow-lg transition-transform group-hover:scale-105">
-                E
-              </div>
-              <span className="font-bold text-2xl text-white tracking-tight">
-                MiniCommerce
-              </span>
+            <Link to="/" aria-label="Shopyora — Trang chủ" className="block mb-12 w-fit transition-transform hover:scale-[1.02]">
+              <Logo size="md" />
             </Link>
 
             <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-6">
@@ -114,10 +110,9 @@ export default function LoginPage() {
           <div className="w-full max-w-md animate-fade-in-up">
             <div className="text-center md:text-left mb-10">
               {/* Mobile logo only */}
-              <Link to="/" className="flex items-center justify-center gap-2 mb-8 md:hidden">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg">
-                  E
-                </div>
+              {/* Nền trắng nên dùng biến thể tone="dark" — vạch nhạt của bản gốc sẽ chìm mất. */}
+              <Link to="/" aria-label="Shopyora — Trang chủ" className="flex justify-center mb-8 md:hidden">
+                <Logo size="md" tone="dark" />
               </Link>
               <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Chào mừng trở lại! 👋</h2>
               <p className="text-slate-500 font-medium">Vui lòng đăng nhập vào tài khoản của bạn.</p>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { getAllProducts } from "../services/productService";
 import ProductCard from "../components/ProductCard";
 import HeroCarousel from "../components/HeroCarousel";
@@ -28,7 +28,6 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [sortBy, setSortBy] = useState("name");
-    const [categoryFilter, setCategoryFilter] = useState("");
 
     const categoryOptions = [
         { value: "1", label: "Điện tử" },
@@ -39,8 +38,28 @@ export default function HomePage() {
     ];
 
     // Đọc query param từ URL để lọc
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const searchTerm = searchParams.get("q") || "";
+    const location = useLocation();
+
+    // Danh mục đọc từ URL (?category=) thay vì state riêng: link ở footer hay link
+    // được chia sẻ mở ra đúng danh mục, và nút Back quay lại được bộ lọc trước đó.
+    const categoryFilter = searchParams.get("category") || "";
+    const setCategoryFilter = (value) => {
+        const next = new URLSearchParams(searchParams);
+        if (value) next.set("category", value);
+        else next.delete("category");
+        setSearchParams(next, { replace: true });
+    };
+
+    // Link từ footer và ô tìm kiếm ở header gắn cờ scrollToProducts: cuộn thẳng tới
+    // danh sách sản phẩm, không thì người dùng vẫn đứng ở banner (hoặc ở footer),
+    // tưởng bấm không ăn. Đổi bộ lọc ngay tại chỗ thì không có cờ nên trang không nhảy.
+    useEffect(() => {
+        if (location.state?.scrollToProducts) {
+            document.getElementById("san-pham")?.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [location.key, location.state]);
 
     const fetchProducts = async () => {
         try {
@@ -216,8 +235,8 @@ export default function HomePage() {
 
             {/* ================= SẢN PHẨM (khu vực mua sắm thật) ================= */}
             <section id="san-pham" className="bg-bg-light pb-24 scroll-mt-24">
-                <div className="max-w-[1200px] mx-auto px-6">
-                    <h2 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-10">
+                <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+                    <h2 className="text-2xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-6 sm:mb-10">
                         Sản phẩm nổi bật
                     </h2>
 
@@ -290,7 +309,7 @@ export default function HomePage() {
 
                     {/* Products Grid */}
                     {!loading && sortedProducts.length > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                             {sortedProducts.map((product, index) => (
                                 <div key={product.id || index} style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }} className="animate-fade-in-up">
                                     <ProductCard product={product} onAddToCart={handleAddToCart} />
@@ -370,8 +389,8 @@ export default function HomePage() {
                 <a href="#san-pham" className="inline-block h-11 px-6 rounded-full bg-white text-accent text-sm font-semibold mb-8 hover:bg-white/90 transition-colors">
                     Bắt đầu mua sắm
                 </a>
-                <h2 className="text-white font-semibold tracking-tight text-[15vw] sm:text-[10rem] leading-none">
-                    MiniCommerce
+                <h2 className="font-brand text-white font-bold tracking-[-0.035em] text-[18vw] sm:text-[10rem] leading-none">
+                    shopyora
                 </h2>
             </section>
         </div>
